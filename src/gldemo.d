@@ -128,84 +128,96 @@ extern (C)
 void onDisplay() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    //foreach (i, coord; map.pawnLocations) {
-    //    setUniformMatrix(programId, "modelTransform", )
-    //}
+    vec3 midpoint = vec3(map.width, map.length, 0) / 2f;
 
-
-    const int width = 8;
-    const int height = 8;
-
-    void positionModel (GLfloat x, GLfloat y, mat4 rotation = Identity()) {
-        mat4 transform = Translate(vec3(x - width/2f + .5f, y - height/2f + .5f, 0f)) * rotation;
-        setUniformMatrix(programId, "modelTransform", transform);
+    glBindVertexArray(meshes["floor"].vaoId);
+    for (int x = 0; x < map.width; x++) {
+        for (int y = 0; y < map.length; y++) {
+            setUniformMatrix(programId, "modelTransform", Translate(vec3(x, y, 0) - midpoint));
+            glDrawArrays(GL_TRIANGLES, 0, meshes["floor"].dataLength);
+        }
     }
 
-    {
-        const int x = 1;
-        const int y = 2;
-
-        glBindVertexArray(meshes["pawn"].vaoId);
-        positionModel(x,y);
+    glBindVertexArray(meshes["pawn"].vaoId);
+    foreach (i, coord; map.pawnLocations) {
+        setUniformMatrix(programId, "modelTransform", Translate(vec3(coord[0], coord[1], 0) - midpoint));
         glDrawArrays(GL_TRIANGLES, 0, meshes["pawn"].dataLength);
     }
 
-    {
-        glBindVertexArray(meshes["floor"].vaoId);
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                positionModel(x, y);
-                glDrawArrays(GL_TRIANGLES, 0, meshes["floor"].dataLength);
-            }
-        }
-    }
 
-    {
-        glBindVertexArray(meshes["fullwall"].vaoId);
+    //const int width = 8;
+    //const int height = 8;
 
-        immutable int[][] fullWallLocationsEW = [
-            [3,4],            [6,4],
-            [3,7],[4,7],[5,7],[6,7],
-        ];
+    //void positionModel (GLfloat x, GLfloat y, mat4 rotation = Identity()) {
+    //    mat4 transform = Translate(vec3(x - width/2f + .5f, y - height/2f + .5f, 0f)) * rotation;
+    //    setUniformMatrix(programId, "modelTransform", transform);
+    //}
 
-        foreach (location; fullWallLocationsEW) {
-            positionModel(location[0], location[1] - .5f);
-            glDrawArrays(GL_TRIANGLES, 0, meshes["fullwall"].dataLength);
-        }
+    //{
+    //    const int x = 1;
+    //    const int y = 2;
 
-        immutable int[][] fullWallLocationsNS = [
-            [3,4],      [3,6],
-            [7,4],[7,5],[7,6],
-        ];
+    //    glBindVertexArray(meshes["pawn"].vaoId);
+    //    positionModel(x,y);
+    //    glDrawArrays(GL_TRIANGLES, 0, meshes["pawn"].dataLength);
+    //}
 
-        foreach (location; fullWallLocationsNS) {
-            positionModel(location[0] - .5f, location[1], RotateZ(PI_2));
-            glDrawArrays(GL_TRIANGLES, 0, meshes["fullwall"].dataLength);
-        }
+    //{
+    //    glBindVertexArray(meshes["floor"].vaoId);
+    //    for (int y = 0; y < height; y++) {
+    //        for (int x = 0; x < width; x++) {
+    //            positionModel(x, y);
+    //            glDrawArrays(GL_TRIANGLES, 0, meshes["floor"].dataLength);
+    //        }
+    //    }
+    //}
 
-        glBindVertexArray(meshes["halfwall"].vaoId);
+    //{
+    //    glBindVertexArray(meshes["fullwall"].vaoId);
 
-        immutable int[][] halfWallLocationsEW = [
-            [5,4],
-            [1,3],
-            [5,0],[6,0],[7,0],
-        ];
+    //    immutable int[][] fullWallLocationsEW = [
+    //        [3,4],            [6,4],
+    //        [3,7],[4,7],[5,7],[6,7],
+    //    ];
 
-        foreach (location; halfWallLocationsEW) {
-            positionModel(location[0], location[1] - .5f);
-            glDrawArrays(GL_TRIANGLES, 0, meshes["halfwall"].dataLength);
-        }
+    //    foreach (location; fullWallLocationsEW) {
+    //        positionModel(location[0], location[1] - .5f);
+    //        glDrawArrays(GL_TRIANGLES, 0, meshes["fullwall"].dataLength);
+    //    }
 
-        immutable int[][] halfWallLocationsNS = [
-            [2,2],
-            [2,3]
-        ];
+    //    immutable int[][] fullWallLocationsNS = [
+    //        [3,4],      [3,6],
+    //        [7,4],[7,5],[7,6],
+    //    ];
 
-        foreach (location; halfWallLocationsNS) {
-            positionModel(location[0] - .5f, location[1], RotateZ(PI_2));
-            glDrawArrays(GL_TRIANGLES, 0, meshes["halfwall"].dataLength);
-        }
-    }
+    //    foreach (location; fullWallLocationsNS) {
+    //        positionModel(location[0] - .5f, location[1], RotateZ(PI_2));
+    //        glDrawArrays(GL_TRIANGLES, 0, meshes["fullwall"].dataLength);
+    //    }
+
+    //    glBindVertexArray(meshes["halfwall"].vaoId);
+
+    //    immutable int[][] halfWallLocationsEW = [
+    //        [5,4],
+    //        [1,3],
+    //        [5,0],[6,0],[7,0],
+    //    ];
+
+    //    foreach (location; halfWallLocationsEW) {
+    //        positionModel(location[0], location[1] - .5f);
+    //        glDrawArrays(GL_TRIANGLES, 0, meshes["halfwall"].dataLength);
+    //    }
+
+    //    immutable int[][] halfWallLocationsNS = [
+    //        [2,2],
+    //        [2,3]
+    //    ];
+
+    //    foreach (location; halfWallLocationsNS) {
+    //        positionModel(location[0] - .5f, location[1], RotateZ(PI_2));
+    //        glDrawArrays(GL_TRIANGLES, 0, meshes["halfwall"].dataLength);
+    //    }
+    //}
 
     glutSwapBuffers();
 
@@ -557,7 +569,7 @@ int main (string[] args) {
     // Load OpenGL 3+ functionality
 	DerelictGL3.reload();
 
-    map = Map.getSampleMap();
+    map = "data/checkerboard.json".readText.parseJSON.unpickle!Map;
 
     // Our OpenGL initialization
     init();

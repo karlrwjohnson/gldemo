@@ -5,10 +5,12 @@ import derelict.opengl3.gl;
 import std_all;
 
 import boilerplate;
+import jsontest;
 import glut;
 import mouse;
 import stl;
 import vectypes;
+import Map : Map;
 
 /*
     Things I'd like to abstract out:
@@ -87,14 +89,14 @@ GLint programId;
 
 TickDuration lastFrame;
 
-GLfloat cameraDist = 8;
+GLfloat cameraDist = 10;
 GLfloat cameraLat = -45 * PI/180;
 GLfloat cameraLon = 45f * PI/180;
 
 GLfloat cameraRadialSpeed = PI; // 180deg/sec
 
 GLfloat lightDist = 5;
-GLfloat lightLat = 45f * PI/180;
+GLfloat lightLat = -45f * PI/180;
 GLfloat lightLon = -45f * PI/180;
 
 struct Mesh {
@@ -118,17 +120,24 @@ bool[int] specialKeysDown;
 MouseState currentMouse;
 MouseState prevMouse;
 
+Map map;
+
 ///// END GLOBALS /////
 
 extern (C)
 void onDisplay() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    //foreach (i, coord; map.pawnLocations) {
+    //    setUniformMatrix(programId, "modelTransform", )
+    //}
+
+
     const int width = 8;
     const int height = 8;
 
-    void positionModel (GLfloat x, GLfloat negZ, mat4 rotation = Identity()) {
-        mat4 transform = Translate(vec3(x - width/2f + .5f, 0f, -(negZ - height/2f + .5f))) * rotation * RotateX(PI_2);
+    void positionModel (GLfloat x, GLfloat y, mat4 rotation = Identity()) {
+        mat4 transform = Translate(vec3(x - width/2f + .5f, y - height/2f + .5f, 0f)) * rotation;
         setUniformMatrix(programId, "modelTransform", transform);
     }
 
@@ -136,7 +145,6 @@ void onDisplay() {
         const int x = 1;
         const int y = 2;
 
-        setUniformMatrix(programId, "modelTransform", RotateX(PI_2));
         glBindVertexArray(meshes["pawn"].vaoId);
         positionModel(x,y);
         glDrawArrays(GL_TRIANGLES, 0, meshes["pawn"].dataLength);
@@ -146,7 +154,7 @@ void onDisplay() {
         glBindVertexArray(meshes["floor"].vaoId);
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                positionModel(x,y);
+                positionModel(x, y);
                 glDrawArrays(GL_TRIANGLES, 0, meshes["floor"].dataLength);
             }
         }
@@ -171,7 +179,7 @@ void onDisplay() {
         ];
 
         foreach (location; fullWallLocationsNS) {
-            positionModel(location[0] - .5f, location[1], RotateY(PI_2));
+            positionModel(location[0] - .5f, location[1], RotateZ(PI_2));
             glDrawArrays(GL_TRIANGLES, 0, meshes["fullwall"].dataLength);
         }
 
@@ -194,7 +202,7 @@ void onDisplay() {
         ];
 
         foreach (location; halfWallLocationsNS) {
-            positionModel(location[0] - .5f, location[1], RotateY(PI_2));
+            positionModel(location[0] - .5f, location[1], RotateZ(PI_2));
             glDrawArrays(GL_TRIANGLES, 0, meshes["halfwall"].dataLength);
         }
     }
@@ -300,12 +308,12 @@ void onIdle () {
 }
 
 void updateCamera() {
-	mat4 cameraLoc =  Translate(vec3(0, 0, -cameraDist)) * RotateX(cameraLat) * RotateY(cameraLon);
+	mat4 cameraLoc =  Translate(vec3(0, cameraDist, 0)) * RotateX(cameraLat) * RotateZ(cameraLon);
 	setUniformMatrix(programId, "cameraLoc", cameraLoc, true);
 }
 
 void updateLight() {
-	vec4 lightLoc = RotateY(lightLon) * RotateX(lightLat) * vec4(0, 0, lightDist, 1);
+	vec4 lightLoc = RotateZ(lightLon) * RotateX(lightLat) * vec4(0, lightDist, 0, 1);
 	setUniformVector(programId, "lightLoc", lightLoc, true);
 }
 
@@ -510,7 +518,7 @@ void init () {
     meshes["halfwall"] = loadStlMesh(programId, "models/halfwall.stl");
 
 
-	mat4 perspective = Perspective( 45, 800.0/600.0, .1, 100 );
+	mat4 perspective = Perspective( 45, 800.0/600.0, .1, 100 ) * RotateX!"deg"(90);
 
 	setUniformMatrix(programId, "perspective", perspective);
 
@@ -548,6 +556,8 @@ int main (string[] args) {
 
     // Load OpenGL 3+ functionality
 	DerelictGL3.reload();
+
+    map = Map.getSampleMap();
 
     // Our OpenGL initialization
     init();

@@ -1,0 +1,86 @@
+solid fullwall.stl
+facet normal -0.0 -0.0 1.0
+  outer loop
+    vertex 0.45 -0.45 0.0
+    vertex -0.45 0.45 0.0
+    vertex -0.45 -0.45 0.0
+  endloop
+endfacet
+facet normal -0.0 -0.0 1.0
+  outer loop
+    vertex -0.45 0.45 0.0
+    vertex 0.45 -0.45 0.0
+    vertex 0.45 0.45 0.0
+  endloop
+endfacet
+facet normal 0.707106781186548 0.0 0.707106781186547
+  outer loop
+    vertex 0.55 0.55 -0.1
+    vertex 0.45 -0.45 0.0
+    vertex 0.55 -0.55 -0.1
+  endloop
+endfacet
+facet normal 0.707106781186548 0.0 0.707106781186547
+  outer loop
+    vertex 0.45 -0.45 0.0
+    vertex 0.55 0.55 -0.1
+    vertex 0.45 0.45 0.0
+  endloop
+endfacet
+facet normal 0.0 0.707106781186548 0.707106781186547
+  outer loop
+    vertex -0.45 0.45 0.0
+    vertex 0.55 0.55 -0.1
+    vertex -0.55 0.55 -0.1
+  endloop
+endfacet
+facet normal 0.0 0.707106781186548 0.707106781186547
+  outer loop
+    vertex 0.55 0.55 -0.1
+    vertex -0.45 0.45 0.0
+    vertex 0.45 0.45 0.0
+  endloop
+endfacet
+facet normal -0.707106781186548 0.0 0.707106781186547
+  outer loop
+    vertex -0.45 -0.45 0.0
+    vertex -0.55 0.55 -0.1
+    vertex -0.55 -0.55 -0.1
+  endloop
+endfacet
+facet normal -0.707106781186548 0.0 0.707106781186547
+  outer loop
+    vertex -0.55 0.55 -0.1
+    vertex -0.45 -0.45 0.0
+    vertex -0.45 0.45 0.0
+  endloop
+endfacet
+facet normal 2.01083637662079e-018 -0.707106781186548 0.707106781186547
+  outer loop
+    vertex 0.45 -0.45 0.0
+    vertex -0.55 -0.55 -0.1
+    vertex 0.55 -0.55 -0.1
+  endloop
+endfacet
+facet normal 2.01083637662079e-018 -0.707106781186548 0.707106781186547
+  outer loop
+    vertex -0.55 -0.55 -0.1
+    vertex 0.45 -0.45 0.0
+    vertex -0.45 -0.45 0.0
+  endloop
+endfacet
+facet normal 0.0 0.0 -1.0
+  outer loop
+    vertex 0.55 0.55 -0.1
+    vertex -0.55 -0.55 -0.1
+    vertex -0.55 0.55 -0.1
+  endloop
+endfacet
+facet normal 0.0 0.0 -1.0
+  outer loop
+    vertex -0.55 -0.55 -0.1
+    vertex 0.55 0.55 -0.1
+    vertex 0.55 -0.55 -0.1
+  endloop
+endfacet
+endsolid fullwall.stl

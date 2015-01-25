@@ -1,0 +1,36 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" 
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="1024" height="1024" viewBox="0 0 1024 1024"
+     xmlns="http://www.w3.org/2000/svg" version="1.1">
+<desc>'lowerleg.blend', Lowerleg, (Blender 2.73 (sub 0))</desc>
+<polygon stroke="black" stroke-width="1" fill="grey" fill-opacity="0.25" points="548.967,60.675 432.289,230.546 578.361,91.330 " />
+<polygon stroke="black" stroke-width="1" fill="grey" fill-opacity="0.25" points="432.289,230.546 548.967,60.675 402.725,201.408 " />
+<polygon stroke="black" stroke-width="1" fill="grey" fill-opacity="0.25" points="490.674,0.100 402.725,201.408 548.967,60.675 " />
+<polygon stroke="black" stroke-width="1" fill="grey" fill-opacity="0.25" points="402.725,201.408 490.674,0.100 344.432,140.833 " />
+<polygon stroke="black" stroke-width="1" fill="grey" fill-opacity="0.25" points="197.513,296.576 3.715,401.137 69.064,454.343 " />
+<polygon stroke="black" stroke-width="1" fill="grey" fill-opacity="0.25" points="3.715,401.137 197.513,296.576 132.164,243.371 " />
+<polygon stroke="black" stroke-width="1" fill="grey" fill-opacity="0.25" points="754.036,776.381 432.289,230.546 294.864,377.767 " />
+<polygon stroke="black" stroke-width="1" fill="grey" fill-opacity="0.25" points="432.289,230.546 754.036,776.381 859.533,663.511 " />
+<polygon stroke="black" stroke-width="1" fill="grey" fill-opacity="0.25" points="294.864,377.767 657.330,897.038 754.036,776.381 " />
+<polygon stroke="black" stroke-width="1" fill="grey" fill-opacity="0.25" points="657.330,897.038 294.864,377.767 167.498,533.009 " />
+<polygon stroke="black" stroke-width="1" fill="grey" fill-opacity="0.25" points="48.499,698.659 657.330,897.038 167.498,533.009 " />
+<polygon stroke="black" stroke-width="1" fill="grey" fill-opacity="0.25" points="657.330,897.038 48.499,698.659 570.809,1023.900 " />
+<polygon stroke="black" stroke-width="1" fill="grey" fill-opacity="0.25" points="859.533,663.511 866.905,881.878 972.403,769.008 " />
+<polygon stroke="black" stroke-width="1" fill="grey" fill-opacity="0.25" points="866.905,881.878 859.533,663.511 754.036,776.381 " />
+<polygon stroke="black" stroke-width="1" fill="grey" fill-opacity="0.25" points="50.289,519.440 167.498,533.009 134.413,507.548 " />
+<polygon stroke="black" stroke-width="1" fill="grey" fill-opacity="0.25" points="167.498,533.009 50.289,519.440 48.499,698.659 " />
+<polygon stroke="black" stroke-width="1" fill="grey" fill-opacity="0.25" points="48.499,698.659 50.289,519.440 0.100,588.935 " />
+<polygon stroke="black" stroke-width="1" fill="grey" fill-opacity="0.25" points="48.499,698.659 0.100,588.935 13.751,673.565 " />
+<polygon stroke="black" stroke-width="1" fill="grey" fill-opacity="0.25" points="197.513,296.576 134.413,507.548 262.862,349.781 " />
+<polygon stroke="black" stroke-width="1" fill="grey" fill-opacity="0.25" points="134.413,507.548 197.513,296.576 69.064,454.343 " />
+<polygon stroke="black" stroke-width="1" fill="grey" fill-opacity="0.25" points="262.862,349.781 167.498,533.009 294.864,377.767 " />
+<polygon stroke="black" stroke-width="1" fill="grey" fill-opacity="0.25" points="167.498,533.009 262.862,349.781 134.413,507.548 " />
+<polygon stroke="black" stroke-width="1" fill="grey" fill-opacity="0.25" points="432.289,230.546 262.862,349.781 294.864,377.767 " />
+<polygon stroke="black" stroke-width="1" fill="grey" fill-opacity="0.25" points="262.862,349.781 432.289,230.546 260.123,264.437 " />
+<polygon stroke="black" stroke-width="1" fill="grey" fill-opacity="0.25" points="260.123,264.437 432.289,230.546 318.629,202.887 " />
+<polygon stroke="black" stroke-width="1" fill="grey" fill-opacity="0.25" points="318.629,202.887 432.289,230.546 402.725,201.408 " />
+<polygon stroke="black" stroke-width="1" fill="grey" fill-opacity="0.25" points="578.361,91.330 859.533,663.511 972.403,560.388 " />
+<polygon stroke="black" stroke-width="1" fill="grey" fill-opacity="0.25" points="859.533,663.511 578.361,91.330 432.289,230.546 " />
+
+</svg>

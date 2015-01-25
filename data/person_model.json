@@ -1,0 +1,122 @@
+{	"model": "torso.ply",
+	"attachments": [
+		{	"model": "head.ply",
+			"pivot": [0, -0.0625, 2.875]
+		},
+		{	"model": "upperarm.ply",
+			"transformMatrix": [
+				1,	0,	0,	0,
+				0,	1,	0,	0,
+				0,	0,	1,	0,
+				1,	0,	2.5,1,
+			],
+			"attachments": [
+				{	"model": "lowerarm.ply",
+					"transformMatrix": [
+						1,	0,	0,	0,
+						0,	1,	0,	0,
+						0,	0,	1,	0,
+						.25,0, -1.5,1,
+					],
+					"attachments": [
+						{	"model": "hand.ply",
+							"transformMatrix": [
+								1,	0,	0,	0,
+								0,	1,	0,	0,
+								0,	0,	1,	0,
+								0,	0, -1.5,1,
+							]
+						}
+					]
+				}
+			]
+		},
+		{	"model": "upperarm.ply",
+			"transformMatrix": [
+				-1,	0,	0,	0,
+				0,	1,	0,	0,
+				0,	0,	1,	0,
+				-1,	0,	2.5,1,
+			],
+			"isMirrored": true,
+			"attachments": [
+				{	"model": "lowerarm.ply",
+					"transformMatrix": [
+						1,	0,	0,	0,
+						0,	1,	0,	0,
+						0,	0,	1,	0,
+						.25,0, -1.5,1,
+					],
+					"attachments": [
+						{	"model": "hand.ply",
+							"transformMatrix": [
+								1,	0,	0,	0,
+								0,	1,	0,	0,
+								0,	0,	1,	0,
+								0,	0, -1.5,1,
+							]
+						}
+					]
+				}
+			]
+		},
+		{	"model": "upperleg.ply",
+			"transformMatrix": [
+				1,	0,	0,	0,
+				0,	1,	0,	0,
+				0,	0,	1,	0,
+				0,	0,	.375,	1
+			],
+			"attachments": [
+				{	"model": "lowerleg.ply",
+					"transformMatrix": [
+						1,	0,	0,	0,
+						0,	1,	0,	0,
+						0,	0,	1,	0,
+						.375, 0, -2.25, 1,
+					],
+					"attachments": [
+						{	"model": "foot.ply",
+							"transformMatrix": [
+								1,	0,	0,	0,
+								0,	1,	0,	0,
+								0,	0,	1,	0,
+								0,	0, -2.25, 1,
+							]
+						}
+					]
+				}
+			]
+		}
+		{	"model": "upperleg.ply",
+			"transformMatrix": [
+				-1,	0,	0,	0,
+				0,	1,	0,	0,
+				0,	0,	1,	0,
+				0,	0,	.375,	1
+			],
+			"isMirrored": true,
+			"attachments": [
+				{	"model": "lowerleg.ply",
+					"transformMatrix": [
+						1,	0,	0,	0,
+						0,	1,	0,	0,
+						0,	0,	1,	0,
+						.375, 0, -2.25, 1,
+					],
+					"attachments": [
+						{	"model": "foot.ply",
+							"transformMatrix": [
+								1,	0,	0,	0,
+								0,	1,	0,	0,
+								0,	0,	1,	0,
+								0,	0, -2.25, 1,
+							]
+						}
+					]
+				}
+			]
+		}
+	]
+}
+

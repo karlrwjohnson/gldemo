@@ -1,7 +1,12 @@
 {	"model": "torso.ply",
 	"attachments": [
 		{	"model": "head.ply",
-			"pivot": [0, -0.0625, 2.875]
+			"transformMatrix": [
+				1,	0,	0,	0,
+				0,	1,	0,	0,
+				0,	0,	1,	0,
+				0,	-0.0625, 2.875, 1,
+			],
 		},
 		{	"model": "upperarm.ply",
 			"transformMatrix": [

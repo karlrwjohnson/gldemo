@@ -1,0 +1,43 @@
+
+	- Render text onscreen with FreeType -> GL texture + dedicated shader program
+		* Requires multiple shader programs
+		* Requires making the program OOP
+	
+	- Implement map loading and saving
+		* Requires defining what I need in a map -- walls, floors, platforms, multilevels
+			> I'm loathe to do this without a clear idea of the game I want to implement. (Maybe I don't need one defined?)
+			> I know that map editors exist. I don't want to build a map editor (I've done that in Java). But I don't want to use anyone's map editor though.*
+		* Requires making the program OOP
+	
+	- Implement colors
+		* Requires textures. My modeling skills are bad enough
+	
+	- Implement clicking on objects
+		* Requires multiple shader programs
+		* Requires some notion of "these are the things I want to draw" -- a system of objects
+	
+	
+* This comes back to my motivations of this project, which although I haven't defined them yet, are at least the following:
+	- Learn the D Programming Language (completed, potentially pointless?)
+	- Revisit OpenGL as a platform for learning D (completed)
+	
+	- Learn Rust and Go as well (abandoned)
+	
+	- Make a tool that could be useful for running tabletop games (doesn't fulfill criterium)
+	- Implement XCOM because I'd rather be making it than playing it (naive)
+	
+	- See how far I can get making a game (that I'd actually like playing) before I get bored.
+	- Don't use a game engine because I want there to be problems left to solve --
+		I might as well download RPGmaker or Unity at that point.
+	- Use D under the assumption that it's easier to use than C++ but has features I miss in anything else, such as:
+		* Operator overloading
+		* The ability to use newer OpenGL features (as opposed to JS, which is limited to WebGL < GL ES 2.0)
+
+I know full well that I'm basically going to spend all my time building a game engine that'll never get used. I'm okay with this.
+
+Technologies:
+	- D Programming language + DMD compiler
+	- OpenGL 3.0 (highest my laptop supports)
+	- Derelict OpenGL3 wrapper (fills in for GLEW)
+	- libGLUT (window creation and events)
+	

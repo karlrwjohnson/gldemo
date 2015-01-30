@@ -8,4 +8,5 @@ public import std.json;
 public import std.math;
 public import std.regex;
 public import std.stdio;
+public import std.string;
 public import std.typecons : tuple, Tuple;

@@ -217,7 +217,7 @@ class PLYListPropertyBuffer : PLYBuffer {
 
 
 
-PLYBuffer[] loadPLY (string filename) {
+PLYBuffer[] loadPLY (FileClass = File) (string filename) {
 
     // Regex Constants
     const STR_MATCH_TYPE     = `(char|uchar|short|ushort|int|uint|float|double)`;
@@ -234,7 +234,7 @@ PLYBuffer[] loadPLY (string filename) {
     auto MATCH_WHITESPACE    = regex(`\s+`);
 
     // Variables
-    auto file = new File(filename, "r");
+    auto file = new FileClass(filename, "r");
 
     string elementName = "";
     size_t rowCount;
@@ -355,16 +355,16 @@ unittest {
         |/          |/
       0 #===========# 1
     */
-    string testFile = r"ply
+
+    enum testFile = r"ply
 format ascii 1.0
 comment Test Cube
 element vertex 8
 property float x
 property float y
 property float z
-element face 12
-property int vertex1
-property int vertex2
+element vertex_indices 12
+property list uchar uint vertex_indices
 end_header
 -1 -1 -1
 -1 -1  1
@@ -388,11 +388,49 @@ end_header
 3 1 7 5
 ";
 
-1
-    auto buffers = loadPLY(testFile);
+    static struct MockFile (string fileContents) {
 
+        size_t testFileIndex = 0;
+
+        public this (string filename, string mode) { };
+
+        public string readln() {
+            if (testFileIndex >= fileContents.length) {
+                return null;
+            }
+
+            auto oldPtr = testFileIndex;
+
+            // Scan for the next newline
+            for (; fileContents[testFileIndex] != '\n' && testFileIndex <= fileContents.length; testFileIndex++) { }
+            testFileIndex++;
+
+            return fileContents[oldPtr .. testFileIndex];
+        }
+
+    }
+
+    auto buffers = loadPLY!(MockFile!testFile)("mock file");
+
+    assert(buffers.length == 2);
+    assert(cast(PLYNamedPropertyBuffer) buffers[0]);
+    assert(cast(PLYListPropertyBuffer)  buffers[1]);
+
+    PLYNamedPropertyBuffer vertex         = cast(PLYNamedPropertyBuffer) buffers[0];
+    PLYListPropertyBuffer  vertex_indices = cast(PLYListPropertyBuffer)  buffers[1];
+
+    assert(vertex.name == "vertex");
+    assert(vertex.rowCount == 8);
+
+    assert(vertex_indices.name == "vertex_indices");
+    assert(vertex_indices.rowCount == 12);
 }
 
+version (unittest) {
+    void main() { writeln("Unit tests passed successfully"); }
+}
+
+/*
 void main() {
     try {
         loadPLYHeader("models/hand.ply");
@@ -400,4 +438,4 @@ void main() {
         writeln(e);
     }
 }
-
+*/

@@ -1,7 +1,4 @@
-import std.conv;
-import std.regex;
-import std.stdio;
-import std.typecons;
+import std_all;
 
 import vectypes;
 

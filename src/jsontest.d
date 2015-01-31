@@ -437,10 +437,3 @@ static void describeType (T, string indent = "") () {
         }
     }
 }
-
-version(unittest) {
-    void main() {
-        import std.stdio;
-        writeln("unit tests passed");
-    }
-}

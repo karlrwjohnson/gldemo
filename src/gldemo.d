@@ -144,81 +144,6 @@ void onDisplay() {
         glDrawArrays(GL_TRIANGLES, 0, meshes["pawn"].dataLength);
     }
 
-
-    //const int width = 8;
-    //const int height = 8;
-
-    //void positionModel (GLfloat x, GLfloat y, mat4 rotation = Identity()) {
-    //    mat4 transform = Translate(vec3(x - width/2f + .5f, y - height/2f + .5f, 0f)) * rotation;
-    //    setUniformMatrix(programId, "modelTransform", transform);
-    //}
-
-    //{
-    //    const int x = 1;
-    //    const int y = 2;
-
-    //    glBindVertexArray(meshes["pawn"].vaoId);
-    //    positionModel(x,y);
-    //    glDrawArrays(GL_TRIANGLES, 0, meshes["pawn"].dataLength);
-    //}
-
-    //{
-    //    glBindVertexArray(meshes["floor"].vaoId);
-    //    for (int y = 0; y < height; y++) {
-    //        for (int x = 0; x < width; x++) {
-    //            positionModel(x, y);
-    //            glDrawArrays(GL_TRIANGLES, 0, meshes["floor"].dataLength);
-    //        }
-    //    }
-    //}
-
-    //{
-    //    glBindVertexArray(meshes["fullwall"].vaoId);
-
-    //    immutable int[][] fullWallLocationsEW = [
-    //        [3,4],            [6,4],
-    //        [3,7],[4,7],[5,7],[6,7],
-    //    ];
-
-    //    foreach (location; fullWallLocationsEW) {
-    //        positionModel(location[0], location[1] - .5f);
-    //        glDrawArrays(GL_TRIANGLES, 0, meshes["fullwall"].dataLength);
-    //    }
-
-    //    immutable int[][] fullWallLocationsNS = [
-    //        [3,4],      [3,6],
-    //        [7,4],[7,5],[7,6],
-    //    ];
-
-    //    foreach (location; fullWallLocationsNS) {
-    //        positionModel(location[0] - .5f, location[1], RotateZ(PI_2));
-    //        glDrawArrays(GL_TRIANGLES, 0, meshes["fullwall"].dataLength);
-    //    }
-
-    //    glBindVertexArray(meshes["halfwall"].vaoId);
-
-    //    immutable int[][] halfWallLocationsEW = [
-    //        [5,4],
-    //        [1,3],
-    //        [5,0],[6,0],[7,0],
-    //    ];
-
-    //    foreach (location; halfWallLocationsEW) {
-    //        positionModel(location[0], location[1] - .5f);
-    //        glDrawArrays(GL_TRIANGLES, 0, meshes["halfwall"].dataLength);
-    //    }
-
-    //    immutable int[][] halfWallLocationsNS = [
-    //        [2,2],
-    //        [2,3]
-    //    ];
-
-    //    foreach (location; halfWallLocationsNS) {
-    //        positionModel(location[0] - .5f, location[1], RotateZ(PI_2));
-    //        glDrawArrays(GL_TRIANGLES, 0, meshes["halfwall"].dataLength);
-    //    }
-    //}
-
     glutSwapBuffers();
 
 	checkGLErrors();
@@ -541,7 +466,7 @@ void init () {
     updateLight();
 }
 
-int main (string[] args) {
+int _main (string[] args) {
 
     // Initialize basic OpenGL functionality
 	DerelictGL3.load();

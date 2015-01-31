@@ -299,7 +299,7 @@ unittest {
 	myvec.x = 17;
 	myvec.y = 18;
 	myvec.z = 20;
-	myvec.z = 13;
+	myvec.w = 13;
 
 	assert(myvec[0] == 17);
 	assert(myvec[1] == 18);
@@ -378,7 +378,7 @@ struct mat(size_t Arity) {
 	}
 
 	/// Construct with a vector to diagonalize
-	this (in GLfloat[Arity] diagonal) {
+	this (in GLfloat[Arity] diagonal...) {
 		for (size_t i = 0, j = 0; j < Arity; i += Arity + 1, j++) {
 			this.data[i] = diagonal[j];
 		}
@@ -657,10 +657,4 @@ mat4 LookAt (vec4 eye, vec4 at, vec4 up) {
 	vec4 v = (n ^^ u).norm;
 	vec4 t = [0,0,0,1];
 	return mat4(u,v,n,t) * Translate(-eye);
-}
-
-version (unittest) {
-	void main(){
-		writeln("Unit tests passed successfully.");
-	}
 }

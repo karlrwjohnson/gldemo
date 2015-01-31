@@ -1,2 +1,11 @@
+# Ignore all top-level files, but include directories and anything with an extension
+/*
+!/*/
+!/*.*
+
+# Also include these specific files
+!/.gitignore
+!/Makefile
+
+# Ignore object files
 *.o
-gldemo

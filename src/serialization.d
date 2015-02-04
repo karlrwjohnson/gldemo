@@ -1,6 +1,16 @@
 import std_all;
 
 /**
+ * Attribute indicating that a type is serializable. Currently ignored.
+ */
+struct Bean {};
+
+/**
+ * Attribute indicating that a member should be serialized through a property with the given name.
+ */
+struct SerializeUsingProperty { string propertyName; }
+
+/**
  * Whether a member of a type may be serialized.
  *
  * The raw list given by __traits!(allMembers) may include members which
@@ -43,7 +53,7 @@ alias ValueTypeDynamicArray(V : V[]) = V;
  *
  * @param value  The object or value to serialize
  */
-JSONValue pickle (T) (T value) {
+JSONValue serialize (T) (T value) {
     JSONValue ret;
 
     debug pragma(msg, ":: ", T);
@@ -80,14 +90,14 @@ JSONValue pickle (T) (T value) {
     else static if (isArray!T) {
         debug pragma(msg, "-- isArray");
 
-        ret.array = value.array.map!(a => pickle(a)).array;
+        ret.array = value.array.map!(a => serialize(a)).array;
     }
     else static if (isAggregateType!T) {
         debug pragma(msg, "-- isAggregateType");
 
         JSONValue[string] properties;
         foreach (member; getProperties!T) {
-            properties[member] = pickle(__traits(getMember, value, member));
+            properties[member] = serialize(__traits(getMember, value, member));
         }
 
         ret.object = properties;
@@ -102,8 +112,8 @@ JSONValue pickle (T) (T value) {
  * @param requireAllFields   Consider it an error if some fields aren't present in the JSON object
  * @param T                  The type of object to convert to
  */
-T unpickle(T)(JSONValue json, bool requireAllFields = true) {
-    debug pragma(msg, "unpickling type ", T);
+T deserialize(T)(JSONValue json, bool requireAllFields = true) {
+    debug pragma(msg, "deserializing type ", T);
 
     // Error string that gets thrown
     string errorString = "Cannot convert JSON type " ~ json.type.to!string ~ " to target type " ~ T.stringof;
@@ -181,7 +191,7 @@ T unpickle(T)(JSONValue json, bool requireAllFields = true) {
                 foreach (string member; getProperties!T) {
                     debug pragma(msg, "   * ", member);
                     if (member in json) {
-                        __traits(getMember, ret, member) = unpickle!(typeof(__traits(getMember, ret, member)))(json[member], requireAllFields);
+                        __traits(getMember, ret, member) = deserialize!(typeof(__traits(getMember, ret, member)))(json[member], requireAllFields);
                     }
                     else if (requireAllFields) {
                         throw new Exception("Required member \"" ~ member ~ "\" missing in JSON object");
@@ -198,7 +208,7 @@ T unpickle(T)(JSONValue json, bool requireAllFields = true) {
                 debug pragma(msg, "      ", T);
                 debug pragma(msg, "       -> ", ValueTypeStaticArray!(T));
 
-                return json.array.map!(a => unpickle!(ValueTypeStaticArray!T)(a, requireAllFields)).array.to!T;
+                return json.array.map!(a => deserialize!(ValueTypeStaticArray!T)(a, requireAllFields)).array.to!T;
 
             }
             else static if (isDynamicArray!T && !isSomeString!T) {
@@ -206,7 +216,7 @@ T unpickle(T)(JSONValue json, bool requireAllFields = true) {
                 debug pragma(msg, "      ", T);
                 debug pragma(msg, "       -> ", ValueTypeDynamicArray!(T));
 
-                return json.array.map!(a => unpickle!(ValueTypeDynamicArray!T)(a, requireAllFields)).array.to!T;
+                return json.array.map!(a => deserialize!(ValueTypeDynamicArray!T)(a, requireAllFields)).array.to!T;
 
             }
             else {
@@ -357,8 +367,8 @@ unittest {
     original.myChildObjectArray[1].myProperty = 18;
     original.myChildObjectArray[2].myProperty = 19;
 
-    JSONValue pickled = original.pickle;
-    SampleBean unpickled = pickled.unpickle!SampleBean;
+    JSONValue pickled = original.serialize;
+    SampleBean deserialized = pickled.deserialize!SampleBean;
 
-    recursiveAssertEqual!(SampleBean)(original, unpickled);
+    recursiveAssertEqual!(SampleBean)(original, deserialized);
 }

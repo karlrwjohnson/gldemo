@@ -5,10 +5,10 @@ import derelict.opengl3.gl;
 import std_all;
 
 import boilerplate;
-import jsontest;
 import glut;
 import mouse;
 import ply;
+import serialization;
 import stl;
 import vectypes;
 import Map : Map;
@@ -568,7 +568,7 @@ int _main (string[] args) {
     // Load OpenGL 3+ functionality
 	DerelictGL3.reload();
 
-    map = "data/checkerboard.json".readText.parseJSON.unpickle!Map;
+    map = "data/checkerboard.json".readText.parseJSON.deserialize!Map;
 
     // Our OpenGL initialization
     init();

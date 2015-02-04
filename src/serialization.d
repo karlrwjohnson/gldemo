@@ -11,6 +11,56 @@ struct Bean {};
 struct SerializeUsingProperty { string propertyName; }
 
 /**
+ * Some members don't come up as positive for any 
+ */
+bool isWTF (T, string member) () {
+    return !(
+        isAggregateType    !(__traits(getMember, T, member)) ||
+        isArray            !(__traits(getMember, T, member)) ||
+        isAssociativeArray !(__traits(getMember, T, member)) ||
+        isBasicType        !(__traits(getMember, T, member)) ||
+        isBoolean          !(__traits(getMember, T, member)) ||
+        isBuiltinType      !(__traits(getMember, T, member)) ||
+        isCallable         !(__traits(getMember, T, member)) ||
+        isDelegate         !(__traits(getMember, T, member)) ||
+        isDynamicArray     !(__traits(getMember, T, member)) ||
+        isExpressionTuple  !(__traits(getMember, T, member)) ||
+        isFloatingPoint    !(__traits(getMember, T, member)) ||
+        isFunctionPointer  !(__traits(getMember, T, member)) ||
+        isIterable         !(__traits(getMember, T, member)) ||
+        isMutable          !(__traits(getMember, T, member)) ||
+        isNarrowString     !(__traits(getMember, T, member)) ||
+        isNumeric          !(__traits(getMember, T, member)) ||
+        isPointer          !(__traits(getMember, T, member)) ||
+        isScalarType       !(__traits(getMember, T, member)) ||
+        isSigned           !(__traits(getMember, T, member)) ||
+        isSomeChar         !(__traits(getMember, T, member)) ||
+        isSomeFunction     !(__traits(getMember, T, member)) ||
+        isSomeString       !(__traits(getMember, T, member)) ||
+        isTypeTuple        !(__traits(getMember, T, member)) ||
+
+        __traits(isAbstractClass   , __traits(getMember, T, member)) ||
+        __traits(isAbstractFunction, __traits(getMember, T, member)) ||
+        __traits(isArithmetic      , __traits(getMember, T, member)) ||
+        __traits(isAssociativeArray, __traits(getMember, T, member)) ||
+        __traits(isFinalClass      , __traits(getMember, T, member)) ||
+        __traits(isFinalFunction   , __traits(getMember, T, member)) ||
+        __traits(isFloating        , __traits(getMember, T, member)) ||
+        __traits(isIntegral        , __traits(getMember, T, member)) ||
+        __traits(isLazy            , __traits(getMember, T, member)) ||
+        __traits(isOut             , __traits(getMember, T, member)) ||
+        __traits(isOverrideFunction, __traits(getMember, T, member)) ||
+        __traits(isRef             , __traits(getMember, T, member)) ||
+        __traits(isScalar          , __traits(getMember, T, member)) ||
+        __traits(isStaticArray     , __traits(getMember, T, member)) ||
+        __traits(isStaticFunction  , __traits(getMember, T, member)) ||
+        __traits(isUnsigned        , __traits(getMember, T, member)) ||
+        __traits(isVirtualFunction , __traits(getMember, T, member)) ||
+        __traits(isVirtualMethod   , __traits(getMember, T, member))
+    );
+}
+
+/**
  * Whether a member of a type may be serialized.
  *
  * The raw list given by __traits!(allMembers) may include members which
@@ -22,7 +72,10 @@ struct SerializeUsingProperty { string propertyName; }
  */
 bool isSerializableProperty (T, string member) () {
     return !(isAbstractClass!(__traits(getMember, T, member)) ||
-             isCallable!(__traits(getMember, T, member))
+             isCallable!(__traits(getMember, T, member)) ||
+             is(typeof(__traits(getMember, T, member)) == void)
+             //isWTF!(T, member)
+             //(__traits(getOverloads, T, member)).length == 0
     );
 }
 
@@ -53,51 +106,52 @@ alias ValueTypeDynamicArray(V : V[]) = V;
  *
  * @param value  The object or value to serialize
  */
-JSONValue serialize (T) (T value) {
+JSONValue serialize (string indent = "", T) (T value) {
     JSONValue ret;
 
-    debug pragma(msg, ":: ", T);
+    debug(serialization) pragma(msg, indent, "T ", T);
 
     static if (isBoolean!T) {
-        debug pragma(msg, "-- isBoolean");
+        debug(serialization) pragma(msg, indent, "- isBoolean");
 
         ret = value;
     }
     else static if (isIntegral!T) {
-        debug pragma(msg, "-- isIntegral");
+        debug(serialization) pragma(msg, indent, "- isIntegral");
 
         static if (isSigned!T) {
-            debug pragma(msg, "-- isSigned");
+            debug(serialization) pragma(msg, indent, "- isSigned");
 
             ret.integer = value;
         }
         else static if (isUnsigned!T) {
-            debug pragma(msg, "-- isUnsigned");
+            debug(serialization) pragma(msg, indent, "- isUnsigned");
 
             ret.uinteger = value;
         }
     }
     else static if (isFloatingPoint!T) {
-        debug pragma(msg, "-- isFloatingPoint");
+        debug(serialization) pragma(msg, indent, "- isFloatingPoint");
 
         ret.floating = value;
     }
     else static if (isSomeString!T) {
-        debug pragma(msg, "-- isSomeString");
+        debug(serialization) pragma(msg, indent, "- isSomeString");
 
         ret.str = value.idup;
     }
     else static if (isArray!T) {
-        debug pragma(msg, "-- isArray");
+        debug(serialization) pragma(msg, indent, "- isArray");
 
         ret.array = value.array.map!(a => serialize(a)).array;
     }
     else static if (isAggregateType!T) {
-        debug pragma(msg, "-- isAggregateType");
+        debug(serialization) pragma(msg, indent, "- isAggregateType");
 
         JSONValue[string] properties;
         foreach (member; getProperties!T) {
-            properties[member] = serialize(__traits(getMember, value, member));
+            debug(serialization) pragma(msg, "+ ", member);
+            properties[member] = serialize!(indent ~ "  ")(__traits(getMember, value, member));
         }
 
         ret.object = properties;
@@ -113,7 +167,7 @@ JSONValue serialize (T) (T value) {
  * @param T                  The type of object to convert to
  */
 T deserialize(T)(JSONValue json, bool requireAllFields = true) {
-    debug pragma(msg, "deserializing type ", T);
+    debug(serialization) pragma(msg, "deserializing type ", T);
 
     // Error string that gets thrown
     string errorString = "Cannot convert JSON type " ~ json.type.to!string ~ " to target type " ~ T.stringof;
@@ -121,7 +175,7 @@ T deserialize(T)(JSONValue json, bool requireAllFields = true) {
     final switch (json.type) {
         case JSON_TYPE.STRING:
             static if (isSomeString!T) {
-                debug pragma(msg, " - isSomeString");
+                debug(serialization) pragma(msg, " - isSomeString");
                 return json.str.to!T;
             }
             else {
@@ -129,7 +183,7 @@ T deserialize(T)(JSONValue json, bool requireAllFields = true) {
             }
         case JSON_TYPE.INTEGER:
             static if (isIntegral!T && isSigned!T) {
-                debug pragma(msg, " - isIntegral && isSigned");
+                debug(serialization) pragma(msg, " - isIntegral && isSigned");
                 return json.integer.to!T;
             }
             else static if (isNumeric!T) {
@@ -140,7 +194,7 @@ T deserialize(T)(JSONValue json, bool requireAllFields = true) {
             }
         case JSON_TYPE.UINTEGER:
             static if (isIntegral!T && isUnsigned!T) {
-                debug pragma(msg, " - isIntegral && isUnsigned");
+                debug(serialization) pragma(msg, " - isIntegral && isUnsigned");
                 return json.uinteger.to!T;
             }
             else static if (isNumeric!T) {
@@ -151,7 +205,7 @@ T deserialize(T)(JSONValue json, bool requireAllFields = true) {
             }
         case JSON_TYPE.FLOAT:
             static if (isFloatingPoint!T) {
-                debug pragma(msg, " - isFloatingPoint");
+                debug(serialization) pragma(msg, " - isFloatingPoint");
                 return json.floating.to!T;
             }
             else static if (isNumeric!T) {
@@ -162,7 +216,7 @@ T deserialize(T)(JSONValue json, bool requireAllFields = true) {
             }
         case JSON_TYPE.TRUE:
             static if (isBoolean!T) {
-                debug pragma(msg, " - isBoolean");
+                debug(serialization) pragma(msg, " - isBoolean");
                 return true;
             }
             else {
@@ -170,7 +224,7 @@ T deserialize(T)(JSONValue json, bool requireAllFields = true) {
             }
         case JSON_TYPE.FALSE:
             static if (isBoolean!T) {
-                debug pragma(msg, " - isBoolean");
+                debug(serialization) pragma(msg, " - isBoolean");
                 return false;
             }
             else {
@@ -178,7 +232,7 @@ T deserialize(T)(JSONValue json, bool requireAllFields = true) {
             }
         case JSON_TYPE.NULL:
             static if (isAggregateType!T) {
-                debug pragma(msg, " - isAggregateType");
+                debug(serialization) pragma(msg, " - isAggregateType");
                 return null;
             }
             else {
@@ -186,10 +240,10 @@ T deserialize(T)(JSONValue json, bool requireAllFields = true) {
             }
         case JSON_TYPE.OBJECT:
             static if (isAggregateType!T) {
-                debug pragma(msg, " - isAggregateType");
+                debug(serialization) pragma(msg, " - isAggregateType");
                 T ret = new T();
                 foreach (string member; getProperties!T) {
-                    debug pragma(msg, "   * ", member);
+                    debug(serialization) pragma(msg, "   * ", member);
                     if (member in json) {
                         __traits(getMember, ret, member) = deserialize!(typeof(__traits(getMember, ret, member)))(json[member], requireAllFields);
                     }
@@ -204,17 +258,17 @@ T deserialize(T)(JSONValue json, bool requireAllFields = true) {
             }
         case JSON_TYPE.ARRAY:
             static if (isStaticArray!T && !isSomeString!T) {
-                debug pragma(msg, " - isArray && !isSomeString!T");
-                debug pragma(msg, "      ", T);
-                debug pragma(msg, "       -> ", ValueTypeStaticArray!(T));
+                debug(serialization) pragma(msg, " - isArray && !isSomeString!T");
+                debug(serialization) pragma(msg, "      ", T);
+                debug(serialization) pragma(msg, "       -> ", ValueTypeStaticArray!(T));
 
                 return json.array.map!(a => deserialize!(ValueTypeStaticArray!T)(a, requireAllFields)).array.to!T;
 
             }
             else static if (isDynamicArray!T && !isSomeString!T) {
-                debug pragma(msg, " - isArray && !isSomeString!T");
-                debug pragma(msg, "      ", T);
-                debug pragma(msg, "       -> ", ValueTypeDynamicArray!(T));
+                debug(serialization) pragma(msg, " - isArray && !isSomeString!T");
+                debug(serialization) pragma(msg, "      ", T);
+                debug(serialization) pragma(msg, "       -> ", ValueTypeDynamicArray!(T));
 
                 return json.array.map!(a => deserialize!(ValueTypeDynamicArray!T)(a, requireAllFields)).array.to!T;
 
@@ -305,7 +359,7 @@ version(unittest) {
     void recursiveAssertEqual (T) (T lhs, T rhs, string propertyName = "") {
         import std.stdio;
 
-        debug writeln(propertyName, " : ", T.stringof);
+        debug(serialization) writeln(propertyName, " : ", T.stringof);
         static if (isAggregateType!T) {
             foreach (property; getProperties!T) {
                 recursiveAssertEqual!(

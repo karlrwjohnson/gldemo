@@ -3,7 +3,7 @@ import std_all;
 /// Utility method I wrote while writing this. It recursively prints out everything it can to describe a given class.
 static void describeType (T, string indent = "") () {
 
-    pragma(msg, indent, "T ", T.stringof);
+    pragma(msg, indent, "+ ", T.stringof);
 
     static if (isAggregateType    !T) pragma(msg, indent, "  - isAggregateType"   );
     static if (isArray            !T) pragma(msg, indent, "  - isArray"           );
@@ -50,35 +50,40 @@ static void describeType (T, string indent = "") () {
 
     static if (isAggregateType!T) {
         foreach (member; __traits(allMembers, T)) {
-            pragma(msg, indent, "  + ", member);
+            pragma(msg, indent, "  * ", member);
 
             foreach (attribute; __traits(getAttributes, __traits(getMember, T, member))) {
                 pragma(msg, indent, "    @ ", attribute);
             }
 
-            static if (!__traits(isAbstractClass, __traits(getMember, T, member))) {
-                describeType!(typeof(__traits(getMember, T, member)), indent ~ "    ");
-            }
-            else {
-                static if (__traits(isAbstractClass   , __traits(getMember, T, member))) pragma(msg, indent, "    - isAbstractClass"   );
-                static if (__traits(isAbstractFunction, __traits(getMember, T, member))) pragma(msg, indent, "    - isAbstractFunction");
-                static if (__traits(isArithmetic      , __traits(getMember, T, member))) pragma(msg, indent, "    - isArithmetic"      );
-                static if (__traits(isAssociativeArray, __traits(getMember, T, member))) pragma(msg, indent, "    - isAssociativeArray");
-                static if (__traits(isFinalClass      , __traits(getMember, T, member))) pragma(msg, indent, "    - isFinalClass"      );
-                static if (__traits(isFinalFunction   , __traits(getMember, T, member))) pragma(msg, indent, "    - isFinalFunction"   );
-                static if (__traits(isFloating        , __traits(getMember, T, member))) pragma(msg, indent, "    - isFloating"        );
-                static if (__traits(isIntegral        , __traits(getMember, T, member))) pragma(msg, indent, "    - isIntegral"        );
-                static if (__traits(isLazy            , __traits(getMember, T, member))) pragma(msg, indent, "    - isLazy"            );
-                static if (__traits(isOut             , __traits(getMember, T, member))) pragma(msg, indent, "    - isOut"             );
-                static if (__traits(isOverrideFunction, __traits(getMember, T, member))) pragma(msg, indent, "    - isOverrideFunction");
-                static if (__traits(isRef             , __traits(getMember, T, member))) pragma(msg, indent, "    - isRef"             );
-                static if (__traits(isScalar          , __traits(getMember, T, member))) pragma(msg, indent, "    - isScalar"          );
-                static if (__traits(isStaticArray     , __traits(getMember, T, member))) pragma(msg, indent, "    - isStaticArray"     );
-                static if (__traits(isStaticFunction  , __traits(getMember, T, member))) pragma(msg, indent, "    - isStaticFunction"  );
-                static if (__traits(isUnsigned        , __traits(getMember, T, member))) pragma(msg, indent, "    - isUnsigned"        );
-                static if (__traits(isVirtualFunction , __traits(getMember, T, member))) pragma(msg, indent, "    - isVirtualFunction" );
-                static if (__traits(isVirtualMethod   , __traits(getMember, T, member))) pragma(msg, indent, "    - isVirtualMethod"   );
-            }          
+            //static if (__traits(getOverloads, T, ))
+
+            //foreach (overload; __traits(getOverloads, T, member)) {
+
+                static if (!__traits(isAbstractClass, __traits(getMember, T, member))) {
+                    describeType!(typeof(__traits(getMember, T, member)), indent ~ "    ");
+                }
+                else {
+                    static if (__traits(isAbstractClass   , __traits(getMember, T, member))) pragma(msg, indent, "    ! isAbstractClass"   );
+                    static if (__traits(isAbstractFunction, __traits(getMember, T, member))) pragma(msg, indent, "    ! isAbstractFunction");
+                    static if (__traits(isArithmetic      , __traits(getMember, T, member))) pragma(msg, indent, "    ! isArithmetic"      );
+                    static if (__traits(isAssociativeArray, __traits(getMember, T, member))) pragma(msg, indent, "    ! isAssociativeArray");
+                    static if (__traits(isFinalClass      , __traits(getMember, T, member))) pragma(msg, indent, "    ! isFinalClass"      );
+                    static if (__traits(isFinalFunction   , __traits(getMember, T, member))) pragma(msg, indent, "    ! isFinalFunction"   );
+                    static if (__traits(isFloating        , __traits(getMember, T, member))) pragma(msg, indent, "    ! isFloating"        );
+                    static if (__traits(isIntegral        , __traits(getMember, T, member))) pragma(msg, indent, "    ! isIntegral"        );
+                    static if (__traits(isLazy            , __traits(getMember, T, member))) pragma(msg, indent, "    ! isLazy"            );
+                    static if (__traits(isOut             , __traits(getMember, T, member))) pragma(msg, indent, "    ! isOut"             );
+                    static if (__traits(isOverrideFunction, __traits(getMember, T, member))) pragma(msg, indent, "    ! isOverrideFunction");
+                    static if (__traits(isRef             , __traits(getMember, T, member))) pragma(msg, indent, "    ! isRef"             );
+                    static if (__traits(isScalar          , __traits(getMember, T, member))) pragma(msg, indent, "    ! isScalar"          );
+                    static if (__traits(isStaticArray     , __traits(getMember, T, member))) pragma(msg, indent, "    ! isStaticArray"     );
+                    static if (__traits(isStaticFunction  , __traits(getMember, T, member))) pragma(msg, indent, "    ! isStaticFunction"  );
+                    static if (__traits(isUnsigned        , __traits(getMember, T, member))) pragma(msg, indent, "    ! isUnsigned"        );
+                    static if (__traits(isVirtualFunction , __traits(getMember, T, member))) pragma(msg, indent, "    ! isVirtualFunction" );
+                    static if (__traits(isVirtualMethod   , __traits(getMember, T, member))) pragma(msg, indent, "    ! isVirtualMethod"   );
+                }
+            //}
         }
     }
 }

@@ -8,6 +8,7 @@ import boilerplate;
 import jsontest;
 import glut;
 import mouse;
+import ply;
 import stl;
 import vectypes;
 import Map : Map;
@@ -43,6 +44,7 @@ const string VSHADER_SRC = r"
     in vec3 vPosition;
     in vec3 vNormal;
     in vec3 vColor;
+    in vec2 vTexCoord;
 
     out vec3 ffPosition;
     out vec3 ffNormal;
@@ -143,6 +145,10 @@ void onDisplay() {
         setUniformMatrix(programId, "modelTransform", Translate(vec3(coord[0], coord[1], 0) - midpoint));
         glDrawArrays(GL_TRIANGLES, 0, meshes["pawn"].dataLength);
     }
+
+    glBindVertexArray(meshes["head"].vaoId);
+    setUniformMatrix(programId, "modelTransform", Identity());
+    glDrawElements(GL_TRIANGLES, meshes["head"].dataLength, GL_UNSIGNED_INT, null);
 
     glutSwapBuffers();
 
@@ -254,11 +260,11 @@ void updateLight() {
 	setUniformVector(programId, "lightLoc", lightLoc, true);
 }
 
-void setUniformMatrix(size_t A)(GLint progId, string name, mat!A value, bool ignoreUndefiendAttrs = false) {
+void setUniformMatrix(size_t A)(GLint progId, string name, mat!A value, bool ignoreUndefinedAttrs = false) {
     char[] nameZ = name.dup ~ "\0";
     GLint location = glGetUniformLocation(progId, &nameZ[0]);
     if (location < 0) {
-        if (ignoreUndefiendAttrs) {
+        if (ignoreUndefinedAttrs) {
             return;
         }
         else {
@@ -270,11 +276,11 @@ void setUniformMatrix(size_t A)(GLint progId, string name, mat!A value, bool ign
     glutPostRedisplay();
 }
 
-void setUniformVector(size_t B)(GLint progId, string name, vec!B value, bool ignoreUndefiendAttrs = false) {
+void setUniformVector(size_t B)(GLint progId, string name, vec!B value, bool ignoreUndefinedAttrs = false) {
     char[] nameZ = name.dup ~ "\0";
     GLint location = glGetUniformLocation(progId, &nameZ[0]);
     if (location < 0) {
-        if (ignoreUndefiendAttrs) {
+        if (ignoreUndefinedAttrs) {
             return;
         }
         else {
@@ -331,7 +337,7 @@ GLint initShader (string[GLint] sources) {
     return programId;
 }
 
-GLint initTris (GLint programId, Tuple!(GLfloat[], int)[string] attributes, bool ignoreUndefiendAttrs = false) {
+GLint initTris (GLint programId, Tuple!(GLfloat[], int)[string] attributes, bool ignoreUndefinedAttrs = false) {
     GLuint vao;
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
@@ -341,7 +347,7 @@ GLint initTris (GLint programId, Tuple!(GLfloat[], int)[string] attributes, bool
         GLint attributeId = glGetAttribLocation(programId, &attribute_z[0]);
         debug writeln("The position of attribute " ~ attribute ~ " is " ~ attributeId);
         if (attributeId < 0) {
-            if (ignoreUndefiendAttrs) {
+            if (ignoreUndefinedAttrs) {
                 debug writeln("Attribute " ~ attribute ~ " has not been assigned an ID. It probably doesn't exist in the shader program.");
                 continue;
             }
@@ -366,7 +372,7 @@ GLint initTris (GLint programId, Tuple!(GLfloat[], int)[string] attributes, bool
     return vao;
 }
 
-GLint initTris2(int T) (GLint programId, vec!T[][string] attributes, bool ignoreUndefiendAttrs = false) {
+GLint initTris2(int T) (GLint programId, vec!T[][string] attributes, bool ignoreUndefinedAttrs = false) {
 
 	// Vertex Array Object to relate the multiple buffers together
 	GLuint vao;
@@ -378,7 +384,7 @@ GLint initTris2(int T) (GLint programId, vec!T[][string] attributes, bool ignore
 		GLuint attributeId = to!uint(glGetAttribLocation(programId, &attributeZ[0]));
         debug writeln("The position of attribute " ~ attribute ~ " is " ~ attributeId);
         if (attributeId < 0) {
-            if (ignoreUndefiendAttrs) {
+            if (ignoreUndefinedAttrs) {
                 debug writeln("Attribute " ~ attribute ~ " has not been assigned an ID. It probably doesn't exist in the shader program.");
                 continue;
             }
@@ -429,6 +435,72 @@ Mesh loadStlMesh(GLint programId, string filename) {
     return Mesh(vao, to!GLint(data[0].length) * 3);
 }
 
+Mesh loadPlyMesh (GLint programId, string filename) {
+    const char *V_POSITION_STR = "vPosition\0";
+    const char *V_NORMAL_STR   = "vNormal\0";
+    const char *V_TEXCOORD_STR = "vTexCoord\0";
+
+    auto data = loadPLY(filename);
+    auto vertex         = cast(PLYNamedPropertyBuffer)(data[0]);
+    auto vertex_indices = cast(PLYListPropertyBuffer )(data[1]);
+
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
+    GLuint vbos[2];
+    glGenBuffers(vbos.length, &vbos[0]);
+
+    glBindBuffer(GL_ARRAY_BUFFER,         vbos[0]);
+    glBufferData(GL_ARRAY_BUFFER,
+                 data[0].bufferSize,
+                 data[0].bufferPtr,
+                 GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos[1]);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                 data[1].bufferSize,
+                 data[1].bufferPtr,
+                 GL_STATIC_DRAW);
+
+    glUseProgram(programId);
+    auto vPosition_loc = glGetAttribLocation(programId, V_POSITION_STR);
+    auto vNormal_loc   = glGetAttribLocation(programId, V_NORMAL_STR);
+    auto vTexCoord_loc = glGetAttribLocation(programId, V_TEXCOORD_STR);
+
+    if (vPosition_loc >= 0) {
+        glVertexAttribPointer(to!uint(vPosition_loc),
+                              3,
+                              GL_FLOAT,
+                              0,
+                              cast(int)(vertex.rowSize),
+                              cast(void*)(vertex.properties[0].offset));
+        glEnableVertexAttribArray(to!uint(vPosition_loc));
+    }
+    if (vNormal_loc >= 0) {
+        glVertexAttribPointer(to!uint(vNormal_loc),
+                              3,
+                              GL_FLOAT,
+                              0,
+                              cast(int)(vertex.rowSize),
+                              cast(void*)(vertex.properties[3].offset));
+        glEnableVertexAttribArray(to!uint(vNormal_loc));
+    }
+    if (vTexCoord_loc >= 0) {
+        glVertexAttribPointer(to!uint(vTexCoord_loc),
+                              3,
+                              GL_FLOAT,
+                              0,
+                              cast(int)(vertex.rowSize),
+                              cast(void*)(vertex.properties[7].offset));
+        glEnableVertexAttribArray(to!uint(vTexCoord_loc));
+    }
+
+    // still kludgey
+    writefln("Number of points in the PLY file calculated to be %d", vertex_indices.bufferSize / vertex_indices.rowSize * 3);
+    return Mesh(vao, to!GLint(vertex_indices.bufferSize / vertex_indices.rowSize * 3));
+}
+
 void init () {
     glClearColor(0.0, 0.0, 0.0, 0.0);
 
@@ -453,6 +525,8 @@ void init () {
     meshes["floor"] = loadStlMesh(programId, "models/floor.stl");
     meshes["fullwall"] = loadStlMesh(programId, "models/fullwall.stl");
     meshes["halfwall"] = loadStlMesh(programId, "models/halfwall.stl");
+    meshes["hand"] = loadPlyMesh(programId, "models/hand.ply");
+    meshes["head"] = loadPlyMesh(programId, "models/head.ply");
 
 
 	mat4 perspective = Perspective( 45, 800.0/600.0, .1, 100 ) * RotateX!"deg"(90);

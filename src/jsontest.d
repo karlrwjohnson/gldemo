@@ -1,10 +1,4 @@
-import std.algorithm;
-import std.array;
-import std.conv;
-import std.json;
-import std.string : join;
-import std.traits;
-import std.typetuple;
+import std_all;
 
 /**
  * Whether a member of a type may be serialized.
@@ -128,6 +122,9 @@ T unpickle(T)(JSONValue json, bool requireAllFields = true) {
                 debug pragma(msg, " - isIntegral && isSigned");
                 return json.integer.to!T;
             }
+            else static if (isNumeric!T) {
+                return json.integer.to!T;
+            }
             else {
                 throw new Exception(errorString);
             }
@@ -136,6 +133,9 @@ T unpickle(T)(JSONValue json, bool requireAllFields = true) {
                 debug pragma(msg, " - isIntegral && isUnsigned");
                 return json.uinteger.to!T;
             }
+            else static if (isNumeric!T) {
+                return json.integer.to!T;
+            }
             else {
                 throw new Exception(errorString);
             }
@@ -143,6 +143,9 @@ T unpickle(T)(JSONValue json, bool requireAllFields = true) {
             static if (isFloatingPoint!T) {
                 debug pragma(msg, " - isFloatingPoint");
                 return json.floating.to!T;
+            }
+            else static if (isNumeric!T) {
+                return json.integer.to!T;
             }
             else {
                 throw new Exception(errorString);
@@ -358,82 +361,4 @@ unittest {
     SampleBean unpickled = pickled.unpickle!SampleBean;
 
     recursiveAssertEqual!(SampleBean)(original, unpickled);
-}
-
-/// Utility method I wrote while writing this. It recursively prints out everything it can to describe a given class.
-static void describeType (T, string indent = "") () {
-
-    pragma(msg, indent, T.stringof);
-
-    if (isAggregateType    !T) pragma(msg, indent, "  isAggregateType"   );
-    if (isArray            !T) pragma(msg, indent, "  isArray"           );
-    if (isAssociativeArray !T) pragma(msg, indent, "  isAssociativeArray");
-    if (isBasicType        !T) pragma(msg, indent, "  isBasicType"       );
-    if (isBoolean          !T) pragma(msg, indent, "  isBoolean"         );
-    if (isBuiltinType      !T) pragma(msg, indent, "  isBuiltinType"     );
-    if (isCallable         !T) pragma(msg, indent, "  isCallable"        );
-    if (isDelegate         !T) pragma(msg, indent, "  isDelegate"        );
-    if (isDynamicArray     !T) pragma(msg, indent, "  isDynamicArray"    );
-    if (isExpressionTuple  !T) pragma(msg, indent, "  isExpressionTuple" );
-    if (isFloatingPoint    !T) pragma(msg, indent, "  isFloatingPoint"   );
-    if (isFunctionPointer  !T) pragma(msg, indent, "  isFunctionPointer" );
-    if (isIterable         !T) pragma(msg, indent, "  isIterable"        );
-    if (isMutable          !T) pragma(msg, indent, "  isMutable"         );
-    if (isNarrowString     !T) pragma(msg, indent, "  isNarrowString"    );
-    if (isNumeric          !T) pragma(msg, indent, "  isNumeric"         );
-    if (isPointer          !T) pragma(msg, indent, "  isPointer"         );
-    if (isScalarType       !T) pragma(msg, indent, "  isScalarType"      );
-    if (isSigned           !T) pragma(msg, indent, "  isSigned"          );
-    if (isSomeChar         !T) pragma(msg, indent, "  isSomeChar"        );
-    if (isSomeFunction     !T) pragma(msg, indent, "  isSomeFunction"    );
-    if (isSomeString       !T) pragma(msg, indent, "  isSomeString"      );
-    if (isTypeTuple        !T) pragma(msg, indent, "  isTypeTuple"       );
-
-    if (__traits(isAbstractClass   , T)) pragma(msg, indent, "  isAbstractClass"   );
-    if (__traits(isAbstractFunction, T)) pragma(msg, indent, "  isAbstractFunction");
-    if (__traits(isArithmetic      , T)) pragma(msg, indent, "  isArithmetic"      );
-    if (__traits(isAssociativeArray, T)) pragma(msg, indent, "  isAssociativeArray");
-    if (__traits(isFinalClass      , T)) pragma(msg, indent, "  isFinalClass"      );
-    if (__traits(isFinalFunction   , T)) pragma(msg, indent, "  isFinalFunction"   );
-    if (__traits(isFloating        , T)) pragma(msg, indent, "  isFloating"        );
-    if (__traits(isIntegral        , T)) pragma(msg, indent, "  isIntegral"        );
-    if (__traits(isLazy            , T)) pragma(msg, indent, "  isLazy"            );
-    if (__traits(isOut             , T)) pragma(msg, indent, "  isOut"             );
-    if (__traits(isOverrideFunction, T)) pragma(msg, indent, "  isOverrideFunction");
-    if (__traits(isRef             , T)) pragma(msg, indent, "  isRef"             );
-    if (__traits(isScalar          , T)) pragma(msg, indent, "  isScalar"          );
-    if (__traits(isStaticArray     , T)) pragma(msg, indent, "  isStaticArray"     );
-    if (__traits(isStaticFunction  , T)) pragma(msg, indent, "  isStaticFunction"  );
-    if (__traits(isUnsigned        , T)) pragma(msg, indent, "  isUnsigned"        );
-    if (__traits(isVirtualFunction , T)) pragma(msg, indent, "  isVirtualFunction" );
-    if (__traits(isVirtualMethod   , T)) pragma(msg, indent, "  isVirtualMethod"   );
-
-    static if (isAggregateType!T) {
-        foreach (member; __traits(allMembers, T)) {
-            pragma(msg, indent, " + ", member);
-            static if (!__traits(isAbstractClass, __traits(getMember, T, member))) {
-                describeType!(typeof(__traits(getMember, T, member)), indent ~ "   ");
-            }
-            else {
-                if (__traits(isAbstractClass   , __traits(getMember, T, member))) pragma(msg, indent, "     isAbstractClass"   );
-                if (__traits(isAbstractFunction, __traits(getMember, T, member))) pragma(msg, indent, "     isAbstractFunction");
-                if (__traits(isArithmetic      , __traits(getMember, T, member))) pragma(msg, indent, "     isArithmetic"      );
-                if (__traits(isAssociativeArray, __traits(getMember, T, member))) pragma(msg, indent, "     isAssociativeArray");
-                if (__traits(isFinalClass      , __traits(getMember, T, member))) pragma(msg, indent, "     isFinalClass"      );
-                if (__traits(isFinalFunction   , __traits(getMember, T, member))) pragma(msg, indent, "     isFinalFunction"   );
-                if (__traits(isFloating        , __traits(getMember, T, member))) pragma(msg, indent, "     isFloating"        );
-                if (__traits(isIntegral        , __traits(getMember, T, member))) pragma(msg, indent, "     isIntegral"        );
-                if (__traits(isLazy            , __traits(getMember, T, member))) pragma(msg, indent, "     isLazy"            );
-                if (__traits(isOut             , __traits(getMember, T, member))) pragma(msg, indent, "     isOut"             );
-                if (__traits(isOverrideFunction, __traits(getMember, T, member))) pragma(msg, indent, "     isOverrideFunction");
-                if (__traits(isRef             , __traits(getMember, T, member))) pragma(msg, indent, "     isRef"             );
-                if (__traits(isScalar          , __traits(getMember, T, member))) pragma(msg, indent, "     isScalar"          );
-                if (__traits(isStaticArray     , __traits(getMember, T, member))) pragma(msg, indent, "     isStaticArray"     );
-                if (__traits(isStaticFunction  , __traits(getMember, T, member))) pragma(msg, indent, "     isStaticFunction"  );
-                if (__traits(isUnsigned        , __traits(getMember, T, member))) pragma(msg, indent, "     isUnsigned"        );
-                if (__traits(isVirtualFunction , __traits(getMember, T, member))) pragma(msg, indent, "     isVirtualFunction" );
-                if (__traits(isVirtualMethod   , __traits(getMember, T, member))) pragma(msg, indent, "     isVirtualMethod"   );
-            }          
-        }
-    }
 }

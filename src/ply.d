@@ -47,7 +47,7 @@ class PLYBuffer {
     string name;
     size_t rowCount;
 
-    protected byte[] buffer;
+    /*protected*/ public byte[] buffer;
 
     this (string name, size_t rowCount) {
         this.name     = name;
@@ -66,6 +66,10 @@ class PLYBuffer {
     }
 
     abstract void loadRow (size_t rowIndex, string[] newRow);
+
+    void* bufferPtr () const @property {
+        return cast(void*)(&buffer[0]);
+    }
 }
 
 /+class PLYGenericPropertyBuffer : PLYBuffer {
@@ -133,7 +137,7 @@ class PLYNamedPropertyBuffer : PLYBuffer {
 
     size_t rowSize;
 
-    PropertyDescriptor[] properties;
+    public PropertyDescriptor[] properties;
 
     size_t propertyIndices[string];
 
@@ -424,7 +428,7 @@ PLYBuffer[] loadPLY (FileClass = File) (string filename) {
             if (listProperties.length > 0) {
                 throw new Exception("An element cannot include both list properties and named properties", filename, i);
             }
-            listProperties ~= PLYListPropertyBuffer.PropertyListDescriptor(match["name"], plyToGlType(match["lengthType"]), plyToGlType(match["type"]));
+            listProperties ~= PLYListPropertyBuffer.PropertyListDescriptor(match["name"], plyToGlType(match["type"]), plyToGlType(match["lengthType"]));
         }
         else if (matches(MATCH_PROPERTY)) {
             if (listProperties.length > 0) {
@@ -456,16 +460,18 @@ PLYBuffer[] loadPLY (FileClass = File) (string filename) {
 
 unittest {
     /*
-         6 #===========# 7
-          /|          /|
-         / |         / |
-      4 #===========# 5|
-        |  |        |  |
-        |  |        |  |
+     +z    Fig. 1 - The cube described in testFile
+      ^
+      |  6 #===========# 7
+      |   /|          /|
+         / |         / |     _
+      4 #===========# 5|     /| +y
+        |  |        |  |    /
+        |  |        |  |   /
         |2 +--------|--# 3
         | /         | /
         |/          |/
-      0 #===========# 1
+      0 #===========# 1  --> +x
     */
 
     enum testFile = r"ply

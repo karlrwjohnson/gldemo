@@ -16,12 +16,19 @@ alias mat4 = mat!4;
 
 /// Property mixin for aliasing single elements of vectors as letter attributes, e.g. vec3.x, vec3.y, etc.
 mixin template TVecAccessor(Type, string Symbol, string Variable) {
-	mixin(fullyQualifiedName!(Type) ~ " " ~ Symbol ~ "() const @property {
-		return " ~ Variable ~ ";
-	}");
-	mixin("void " ~ Symbol ~ "(" ~ fullyQualifiedName!(Type) ~ " value) @property {
-		" ~ Variable ~ " = value;
-	}");
+	mixin(format(
+		"%s %s () const @property { return %s; }",
+		fullyQualifiedName!(Type),
+		Symbol,
+		Variable
+	));
+
+	mixin(format(
+		"void %s (%s value) @property { %s = value; }",
+		Symbol,
+		fullyQualifiedName!(Type),
+		Variable
+	));
 }
 
 /**
@@ -31,16 +38,25 @@ mixin template TVecAccessor(Type, string Symbol, string Variable) {
  */
 mixin template TVecMultiAccessor2(Type, string Symbol, string Variable, size_t i, size_t j) {
 	static const string sType = chompPrefix(fullyQualifiedName!(Type), moduleName!(Type) ~ ".");
-	mixin(sType ~ " " ~ Symbol ~ "() const @property {
-		return " ~ sType ~ "(
-			" ~ Variable ~ "[" ~ to!string(i) ~ "],
-			" ~ Variable ~ "[" ~ to!string(j) ~ "],
-		);
-	}");
-	mixin("void " ~ Symbol ~ "(" ~ sType ~ " value) @property {
-		" ~ Variable ~ "[" ~ to!string(i) ~ "] = value[0];
-		" ~ Variable ~ "[" ~ to!string(j) ~ "] = value[1];
-	}");
+
+	mixin(format(
+		"%s %s () const @property {
+			return %s ( %s[%d], %s[%d] );
+		}",
+		sType, Symbol,
+		sType,
+		Variable, i,
+		Variable, j
+	));
+	mixin(format(
+		"void %s (%s value) @property {
+			%s[%u] = value[0];
+			%s[%u] = value[1];
+		}",
+		Symbol, sType,
+		Variable, i,
+		Variable, j
+	));
 }
 
 /**
@@ -49,18 +65,28 @@ mixin template TVecMultiAccessor2(Type, string Symbol, string Variable, size_t i
  */
 mixin template TVecMultiAccessor3(Type, string Symbol, string Variable, size_t i, size_t j, size_t k) {
 	static const string sType = chompPrefix(fullyQualifiedName!(Type), moduleName!(Type));
-	mixin(sType ~ " " ~ Symbol ~ "() const @property {
-		return " ~ sType ~ "(
-			" ~ Variable ~ "[" ~ to!string(i) ~ "],
-			" ~ Variable ~ "[" ~ to!string(j) ~ "],
-			" ~ Variable ~ "[" ~ to!string(k) ~ "],
-		);
-	}");
-	mixin("void " ~ Symbol ~ "(" ~ sType ~ " value) @property {
-		" ~ Variable ~ "[" ~ to!string(i) ~ "] = value[0];
-		" ~ Variable ~ "[" ~ to!string(j) ~ "] = value[1];
-		" ~ Variable ~ "[" ~ to!string(k) ~ "] = value[2];
-	}");
+
+	mixin(format(
+		"%s %s () const @property {
+			return %s ( %s[%d], %s[%d], %s[%d] );
+		}",
+		sType, Symbol,
+		sType,
+		Variable, i,
+		Variable, j,
+		Variable, k
+	));
+	mixin(format(
+		"void %s (%s value) @property {
+			%s[%u] = value[0];
+			%s[%u] = value[1];
+			%s[%u] = value[2];
+		}",
+		Symbol, sType,
+		Variable, i,
+		Variable, j,
+		Variable, k
+	));
 }
 
 /**
@@ -69,20 +95,31 @@ mixin template TVecMultiAccessor3(Type, string Symbol, string Variable, size_t i
  */
 mixin template TVecMultiAccessor4(Type, string Symbol, string Variable, size_t i, size_t j, size_t k, size_t l) {
 	static const string sType = chompPrefix(fullyQualifiedName!(Type), moduleName!(Type));
-	mixin(sType ~ " " ~ Symbol ~ "() const @property {
-		return " ~ sType ~ "(
-			" ~ Variable ~ "[" ~ to!string(i) ~ "],
-			" ~ Variable ~ "[" ~ to!string(j) ~ "],
-			" ~ Variable ~ "[" ~ to!string(k) ~ "],
-			" ~ Variable ~ "[" ~ to!string(l) ~ "],
-		);
-	}");
-	mixin("void " ~ Symbol ~ "(" ~ sType ~ " value) @property {
-		" ~ Variable ~ "[" ~ to!string(i) ~ "] = value[0];
-		" ~ Variable ~ "[" ~ to!string(j) ~ "] = value[1];
-		" ~ Variable ~ "[" ~ to!string(k) ~ "] = value[2];
-		" ~ Variable ~ "[" ~ to!string(l) ~ "] = value[3];
-	}");
+
+	mixin(format(
+		"%s %s () const @property {
+			return %s ( %s[%d], %s[%d], %s[%d], %s[%d] );
+		}",
+		sType, Symbol,
+		sType,
+		Variable, i,
+		Variable, j,
+		Variable, k,
+		Variable, l
+	));
+	mixin(format(
+		"void %s (%s value) @property {
+			%s[%u] = value[0];
+			%s[%u] = value[1];
+			%s[%u] = value[2];
+			%s[%u] = value[3];
+		}",
+		Symbol, sType,
+		Variable, i,
+		Variable, j,
+		Variable, k,
+		Variable, l
+	));
 }
 
 struct vec (size_t Arity) {
@@ -606,6 +643,13 @@ mat4 Scale (vec3 factor) {
 				0, factor.y, 0,0,
 				0,0, factor.z, 0,
 				0,0,0,         1);
+}
+
+mat4 Scale (GLfloat factor) {
+	return mat4( factor, 0,0,0,
+				0, factor, 0,0,
+				0,0, factor, 0,
+				0,0,0,       1);
 }
 
 mat4 RotateX (string degrees = "") (GLfloat radians) {

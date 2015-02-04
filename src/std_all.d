@@ -9,4 +9,6 @@ public import std.math;
 public import std.regex;
 public import std.stdio;
 public import std.string;
+public import std.traits;
 public import std.typecons : tuple, Tuple;
+public import std.typetuple;

@@ -391,6 +391,7 @@ version(unittest) {
             return myUnserializableChild.myProperty;
         }
         void myUnserializableChild_accessor (int value) @property {
+            this.myUnserializableChild = new SampleChildBean(); // !! Important for classes !!
             myUnserializableChild.myProperty = value;
         }
 
@@ -400,6 +401,7 @@ version(unittest) {
         import std.stdio;
 
         debug(serialization) writeln(propertyName, " : ", T.stringof);
+        
         static if (isAggregateType!T) {
             if (lhs is null) {
                 assert(rhs is null);
@@ -440,7 +442,6 @@ version(unittest) {
 }
 
 unittest {
-
     auto original = new SampleBean();
     original.myFalse  = false;
     original.myTrue   = true;
@@ -468,10 +469,10 @@ unittest {
     original.myChildObjectArray[1].myProperty = 18;
     original.myChildObjectArray[2].myProperty = 19;
 
-    original.myUnserializableChild = new SampleChildBean();
-    original.myUnserializableChild.myProperty = 127;
+    original.myUnserializableChild_accessor = 127;
 
     JSONValue pickled = original.serialize;
+
     SampleBean deserialized = pickled.deserialize!SampleBean;
 
     recursiveAssertEqual!(SampleBean)(original, deserialized);

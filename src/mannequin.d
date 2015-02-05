@@ -9,7 +9,8 @@ import vectypes;
 class Mannequin {
     string model;
 
-    @SerializeUsingProperty("transformMatrix_accessor")
+    @Bean
+    @SerializeUsingProperty!(this.transformMatrix_accessor)
     mat4 transformMatrix;
 
     bool isMirrored;
@@ -26,17 +27,31 @@ class Mannequin {
     }
 }
 
-unittest {
+/+unittest {
     import meta;
     describeType!Mannequin;
 
-    auto m = new Mannequin();
-    m.model = "MODEL";
-    m.transformMatrix = mat4([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]);
-    m.isMirrored = true;
+    string jsonText = q"(
+        {
+            "model": "MODEL",
+            "isMirrored": true,
+            "attachments" : [],
+            "transformMatrix" : [ 1,2,3,4,
+                                5,6,7,8,
+                                9,10,11,12,
+                                13,14,15,16 ]
+        })";
+
+    auto m = jsonText.deserialize!Mannequin;
 
     m.serialize.stringifyJSON.writeln;
-}
+
+    assert(m.model == "MODEL");
+    assert(m.transformMatrix == mat4([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]));
+    assert(m.isMirrored == true);
+
+    m.serialize.stringifyJSON.writeln;
+}+/
 
 unittest {
     //auto person = "data/person_model.json".readText.parseJSON.unpickle!Mannequin(false);

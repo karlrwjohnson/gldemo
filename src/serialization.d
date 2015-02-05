@@ -1,5 +1,7 @@
 import std_all;
 
+import meta;
+
 /**
  * Attribute indicating that a type is serializable. Currently ignored.
  */
@@ -8,57 +10,10 @@ struct Bean {};
 /**
  * Attribute indicating that a member should be serialized through a property with the given name.
  */
-struct SerializeUsingProperty { string propertyName; }
+struct SerializeUsingProperty (alias propertyName) { }
 
-/**
- * Some members don't come up as positive for any 
- */
-bool isWTF (T, string member) () {
-    return !(
-        isAggregateType    !(__traits(getMember, T, member)) ||
-        isArray            !(__traits(getMember, T, member)) ||
-        isAssociativeArray !(__traits(getMember, T, member)) ||
-        isBasicType        !(__traits(getMember, T, member)) ||
-        isBoolean          !(__traits(getMember, T, member)) ||
-        isBuiltinType      !(__traits(getMember, T, member)) ||
-        isCallable         !(__traits(getMember, T, member)) ||
-        isDelegate         !(__traits(getMember, T, member)) ||
-        isDynamicArray     !(__traits(getMember, T, member)) ||
-        isExpressionTuple  !(__traits(getMember, T, member)) ||
-        isFloatingPoint    !(__traits(getMember, T, member)) ||
-        isFunctionPointer  !(__traits(getMember, T, member)) ||
-        isIterable         !(__traits(getMember, T, member)) ||
-        isMutable          !(__traits(getMember, T, member)) ||
-        isNarrowString     !(__traits(getMember, T, member)) ||
-        isNumeric          !(__traits(getMember, T, member)) ||
-        isPointer          !(__traits(getMember, T, member)) ||
-        isScalarType       !(__traits(getMember, T, member)) ||
-        isSigned           !(__traits(getMember, T, member)) ||
-        isSomeChar         !(__traits(getMember, T, member)) ||
-        isSomeFunction     !(__traits(getMember, T, member)) ||
-        isSomeString       !(__traits(getMember, T, member)) ||
-        isTypeTuple        !(__traits(getMember, T, member)) ||
-
-        __traits(isAbstractClass   , __traits(getMember, T, member)) ||
-        __traits(isAbstractFunction, __traits(getMember, T, member)) ||
-        __traits(isArithmetic      , __traits(getMember, T, member)) ||
-        __traits(isAssociativeArray, __traits(getMember, T, member)) ||
-        __traits(isFinalClass      , __traits(getMember, T, member)) ||
-        __traits(isFinalFunction   , __traits(getMember, T, member)) ||
-        __traits(isFloating        , __traits(getMember, T, member)) ||
-        __traits(isIntegral        , __traits(getMember, T, member)) ||
-        __traits(isLazy            , __traits(getMember, T, member)) ||
-        __traits(isOut             , __traits(getMember, T, member)) ||
-        __traits(isOverrideFunction, __traits(getMember, T, member)) ||
-        __traits(isRef             , __traits(getMember, T, member)) ||
-        __traits(isScalar          , __traits(getMember, T, member)) ||
-        __traits(isStaticArray     , __traits(getMember, T, member)) ||
-        __traits(isStaticFunction  , __traits(getMember, T, member)) ||
-        __traits(isUnsigned        , __traits(getMember, T, member)) ||
-        __traits(isVirtualFunction , __traits(getMember, T, member)) ||
-        __traits(isVirtualMethod   , __traits(getMember, T, member))
-    );
-}
+/*
+*/
 
 /**
  * Whether a member of a type may be serialized.
@@ -69,13 +24,32 @@ bool isWTF (T, string member) () {
  * make sense to serialze as they get their information externally.
  *
  * This macro function may be used to weed them out.
+ *
+ * Things that seem to give trait macros trouble:
+ *  
+ *  - Object.Monitor, an abstract class inserted by D, presumably to facilitate safe multithreading
+ *      What happens:   It can't be passed to the describeType! template, leading me to believe
+ *                      abstract classes aren't types.
+ *      Workaround:     I weed it out with __traits(isAbstractClass)
+ *  
+ *  - Anything that is a template, it seems
+ *       * Most of the operator overloads qualify for this
+ *       * Even the "auto" parameter qualifier seems to trigger this, e.g. opEquals()
+ *      What happens:   The type of a template has type "void" until you pass parameters to
+ *                      it, because the parameters are often required to evaluate the type.
+ *                      Sometimes a template might not even be defined for some parameters,
+ *                      such as those with if() blocks.
+ *      Workaround:     There seems to be zilch support for detecting traits, even for
+ *                      determining how many parameters they take what types they are.
+ *                      I might just rule out templates altogether by rejecting anything of
+ *                      type "void"
+ *                      Doesn't seem too big an issue since I don't want to serialize operators
+ *                      anyway!
  */
 bool isSerializableProperty (T, string member) () {
     return !(isAbstractClass!(__traits(getMember, T, member)) ||
              isCallable!(__traits(getMember, T, member)) ||
              is(typeof(__traits(getMember, T, member)) == void)
-             //isWTF!(T, member)
-             //(__traits(getOverloads, T, member)).length == 0
     );
 }
 
@@ -89,8 +63,17 @@ template getProperties (T) {
     alias getProperties = Filter!(isSerializableProperty_alias, __traits(allMembers, T));
 }
 
-alias ValueTypeStaticArray(V : V[i], int i) = V;
-alias ValueTypeDynamicArray(V : V[]) = V;
+alias ValueTypeOfStaticArray(V : V[i], int i) = V;
+alias ValueTypeOfDynamicArray(V : V[]) = V;
+
+bool hasAttribute (alias thing, alias Attr) () {
+    foreach (anAttribute; __traits(getAttributes, thing)) {
+        if (is(anAttribute == Attr)) {
+            return true;
+        }
+    }
+    return false;
+}
 
 /**
  * Serialize a class to JSON.
@@ -149,8 +132,19 @@ JSONValue serialize (string indent = "", T) (T value) {
         debug(serialization) pragma(msg, indent, "- isAggregateType");
 
         JSONValue[string] properties;
-        foreach (member; getProperties!T) {
+
+        memberLoop: foreach (member; getProperties!T) {
             debug(serialization) pragma(msg, "+ ", member);
+
+            foreach (attribute; __traits(getAttributes, __traits(getMember, value, member))) {
+                static if (__traits(compiles, TemplateOf!attribute) && __traits(identifier, attribute) == "SerializeUsingProperty") {
+                    debug(serialization) pragma(msg, "   SerializeUsingProperty: ", member, " -> ", __traits(identifier, TemplateArgsOf!(attribute)[0]));
+
+                    properties[member] = serialize!(indent ~ "  ")(__traits(getMember, value, __traits(identifier, TemplateArgsOf!(attribute)[0])));
+                    continue memberLoop;
+                }
+            }
+
             properties[member] = serialize!(indent ~ "  ")(__traits(getMember, value, member));
         }
 
@@ -231,8 +225,8 @@ T deserialize(T)(JSONValue json, bool requireAllFields = true) {
                 throw new Exception(errorString);
             }
         case JSON_TYPE.NULL:
-            static if (isAggregateType!T) {
-                debug(serialization) pragma(msg, " - isAggregateType");
+            static if (is(T == class)) {
+                debug(serialization) pragma(msg, " - is class");
                 return null;
             }
             else {
@@ -241,11 +235,34 @@ T deserialize(T)(JSONValue json, bool requireAllFields = true) {
         case JSON_TYPE.OBJECT:
             static if (isAggregateType!T) {
                 debug(serialization) pragma(msg, " - isAggregateType");
-                T ret = new T();
-                foreach (string member; getProperties!T) {
+                T ret;
+
+                static if (is(T == class)) {
+                    ret = new T();
+                }
+
+                memberLoop: foreach (string member; getProperties!T) {
                     debug(serialization) pragma(msg, "   * ", member);
                     if (member in json) {
-                        __traits(getMember, ret, member) = deserialize!(typeof(__traits(getMember, ret, member)))(json[member], requireAllFields);
+
+                        foreach (attribute; __traits(getAttributes, __traits(getMember, T, member))) {
+                            static if (__traits(identifier, attribute) == "SerializeUsingProperty") {
+                                debug(serialization) pragma(msg,
+                                    "   SerializeUsingProperty: ", member, " -> ",
+                                    __traits(identifier, TemplateArgsOf!(attribute)[0])
+                                );
+
+                                __traits(getMember, ret, __traits(identifier, TemplateArgsOf!(attribute)[0])) = deserialize!(
+                                    typeof(__traits(getMember, T, __traits(identifier, TemplateArgsOf!(attribute)[0])))
+                                )(json[member], requireAllFields);
+
+                                continue memberLoop;
+                            }
+                        }
+
+                        __traits(getMember, ret, member) = deserialize!(
+                            typeof(__traits(getMember, ret, member))
+                        )(json[member], requireAllFields);
                     }
                     else if (requireAllFields) {
                         throw new Exception("Required member \"" ~ member ~ "\" missing in JSON object");
@@ -260,23 +277,35 @@ T deserialize(T)(JSONValue json, bool requireAllFields = true) {
             static if (isStaticArray!T && !isSomeString!T) {
                 debug(serialization) pragma(msg, " - isArray && !isSomeString!T");
                 debug(serialization) pragma(msg, "      ", T);
-                debug(serialization) pragma(msg, "       -> ", ValueTypeStaticArray!(T));
+                debug(serialization) pragma(msg, "       -> ", ValueTypeOfStaticArray!(T));
 
-                return json.array.map!(a => deserialize!(ValueTypeStaticArray!T)(a, requireAllFields)).array.to!T;
+                // Map the fields of the JSONValue array to the target array type.
+                return json.array.map!(a => deserialize!(ValueTypeOfStaticArray!T)(a, requireAllFields)).array.to!T;
 
             }
             else static if (isDynamicArray!T && !isSomeString!T) {
                 debug(serialization) pragma(msg, " - isArray && !isSomeString!T");
                 debug(serialization) pragma(msg, "      ", T);
-                debug(serialization) pragma(msg, "       -> ", ValueTypeDynamicArray!(T));
+                debug(serialization) pragma(msg, "       -> ", ValueTypeOfDynamicArray!(T));
 
-                return json.array.map!(a => deserialize!(ValueTypeDynamicArray!T)(a, requireAllFields)).array.to!T;
-
+                // Map the fields of the JSONValue array to the target array type.
+                return json.array.map!(a => deserialize!(ValueTypeOfDynamicArray!T)(a, requireAllFields)).array.to!T;
             }
             else {
                 throw new Exception(errorString);
             }
     }
+}
+
+/**
+ * Deserialize an object from JSON
+ *
+ * @param json               The JSON tree to deserialize
+ * @param requireAllFields   Consider it an error if some fields aren't present in the JSON object
+ * @param T                  The type of object to convert to
+ */
+T deserialize(T)(string json, bool requireAllFields = true) {
+    return deserialize!T(parseJSON(json), requireAllFields);
 }
 
 /// JSON tree serializer. Completely unnecessary, but serves as an example of how to use JSONValue
@@ -354,6 +383,17 @@ version(unittest) {
 
         SampleChildBean myChildObject;
         SampleChildBean[] myChildObjectArray;
+
+        @SerializeUsingProperty!myUnserializableChild_accessor
+        SampleChildBean myUnserializableChild;
+
+        int myUnserializableChild_accessor () const @property {
+            return myUnserializableChild.myProperty;
+        }
+        void myUnserializableChild_accessor (int value) @property {
+            myUnserializableChild.myProperty = value;
+        }
+
     }
 
     void recursiveAssertEqual (T) (T lhs, T rhs, string propertyName = "") {
@@ -361,21 +401,28 @@ version(unittest) {
 
         debug(serialization) writeln(propertyName, " : ", T.stringof);
         static if (isAggregateType!T) {
-            foreach (property; getProperties!T) {
-                recursiveAssertEqual!(
-                    typeof(__traits(getMember, T, property))
-                )(
-                    __traits(getMember, lhs, property),
-                    __traits(getMember, rhs, property),
-                    propertyName ~ "." ~ property  
-                );
+            if (lhs is null) {
+                assert(rhs is null);
+            }
+            else {
+                assert(rhs !is null);
+
+                foreach (property; getProperties!T) {
+                    recursiveAssertEqual!(
+                        typeof(__traits(getMember, T, property))
+                    )(
+                        __traits(getMember, lhs, property),
+                        __traits(getMember, rhs, property),
+                        propertyName ~ "." ~ property  
+                    );
+                }
             }
         }
         else static if (isDynamicArray!T && !isSomeString!T) {
             assert(lhs.length == rhs.length);
             for (int i = 0; i < lhs.length; i++) {
                 recursiveAssertEqual!(
-                    ValueTypeDynamicArray!T
+                    ValueTypeOfDynamicArray!T
                 )(
                     lhs[i],
                     rhs[i],
@@ -420,6 +467,9 @@ unittest {
     original.myChildObjectArray[0].myProperty = 17;
     original.myChildObjectArray[1].myProperty = 18;
     original.myChildObjectArray[2].myProperty = 19;
+
+    original.myUnserializableChild = new SampleChildBean();
+    original.myUnserializableChild.myProperty = 127;
 
     JSONValue pickled = original.serialize;
     SampleBean deserialized = pickled.deserialize!SampleBean;

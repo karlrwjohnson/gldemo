@@ -638,6 +638,14 @@ mat4 Translate (size_t N) (vec!N delta)
 				0,0,0,1);
 }
 
+mat4 Translate (float x, float y, float z)
+{
+	return mat4(1,0,0,x,
+				0,1,0,y,
+				0,0,1,z,
+				0,0,0,1);
+}
+
 mat4 Scale (vec3 factor) {
 	return mat4( factor.x, 0,0,0,
 				0, factor.y, 0,0,

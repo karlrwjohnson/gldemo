@@ -12,8 +12,15 @@ struct Bean {};
  */
 struct SerializeUsingProperty (alias propertyName) { }
 
-/*
-*/
+/**
+ * Attribute indicating that a member is required during deserialization
+ */
+struct SerializeRequired { }
+
+/**
+ * Do NOT serialize or deserialize this property
+ */
+struct SerializeIgnore { }
 
 /**
  * Whether a member of a type may be serialized.
@@ -66,15 +73,6 @@ template getProperties (T) {
 alias ValueTypeOfStaticArray(V : V[i], int i) = V;
 alias ValueTypeOfDynamicArray(V : V[]) = V;
 
-bool hasAttribute (alias thing, alias Attr) () {
-    foreach (anAttribute; __traits(getAttributes, thing)) {
-        if (is(anAttribute == Attr)) {
-            return true;
-        }
-    }
-    return false;
-}
-
 /**
  * Serialize a class to JSON.
  * 
@@ -89,66 +87,84 @@ bool hasAttribute (alias thing, alias Attr) () {
  *
  * @param value  The object or value to serialize
  */
-JSONValue serialize (string indent = "", T) (T value) {
+JSONValue serialize (T) (T value) {
     JSONValue ret;
+    ret.object = null;
 
-    debug(serialization) pragma(msg, indent, "T ", T);
+    debug(serialization) pragma(msg, "T ", T);
 
     static if (isBoolean!T) {
-        debug(serialization) pragma(msg, indent, "- isBoolean");
+        debug(serialization) pragma(msg, "- isBoolean");
 
         ret = value;
     }
     else static if (isIntegral!T) {
-        debug(serialization) pragma(msg, indent, "- isIntegral");
+        debug(serialization) pragma(msg, "- isIntegral");
 
         static if (isSigned!T) {
-            debug(serialization) pragma(msg, indent, "- isSigned");
+            debug(serialization) pragma(msg, "- isSigned");
 
             ret.integer = value;
         }
         else static if (isUnsigned!T) {
-            debug(serialization) pragma(msg, indent, "- isUnsigned");
+            debug(serialization) pragma(msg, "- isUnsigned");
 
             ret.uinteger = value;
         }
     }
     else static if (isFloatingPoint!T) {
-        debug(serialization) pragma(msg, indent, "- isFloatingPoint");
+        debug(serialization) pragma(msg, "- isFloatingPoint");
 
         ret.floating = value;
     }
     else static if (isSomeString!T) {
-        debug(serialization) pragma(msg, indent, "- isSomeString");
+        debug(serialization) pragma(msg, "- isSomeString");
 
         ret.str = value.idup;
     }
     else static if (isArray!T) {
-        debug(serialization) pragma(msg, indent, "- isArray");
+        debug(serialization) pragma(msg, "- isArray");
 
         ret.array = value.array.map!(a => serialize(a)).array;
     }
+    else static if (isAssociativeArray!T && isSomeString!(KeyType!T)) {
+        debug(serialization) pragma(msg, "- isAssociativeArray!T && isSomeString!KeyType!T");
+
+        JSONValue[string] properties;
+
+        foreach (k, v; value) {
+            properties[k] = serialize(v);
+        }
+
+        ret.object = properties;
+    }
     else static if (isAggregateType!T) {
-        debug(serialization) pragma(msg, indent, "- isAggregateType");
+        debug(serialization) pragma(msg, "- isAggregateType");
 
         JSONValue[string] properties;
 
         memberLoop: foreach (member; getProperties!T) {
             debug(serialization) pragma(msg, "+ ", member);
 
+            // If one of the member's attributes is @SerializeUsingProperty, serialize the other property in its place
             foreach (attribute; __traits(getAttributes, __traits(getMember, value, member))) {
                 static if (__traits(compiles, TemplateOf!attribute) && __traits(identifier, attribute) == "SerializeUsingProperty") {
                     debug(serialization) pragma(msg, "   SerializeUsingProperty: ", member, " -> ", __traits(identifier, TemplateArgsOf!(attribute)[0]));
 
-                    properties[member] = serialize!(indent ~ "  ")(__traits(getMember, value, __traits(identifier, TemplateArgsOf!(attribute)[0])));
+                    properties[member] = serialize(__traits(getMember, value, __traits(identifier, TemplateArgsOf!(attribute)[0])));
                     continue memberLoop;
                 }
             }
 
-            properties[member] = serialize!(indent ~ "  ")(__traits(getMember, value, member));
+            properties[member] = serialize(__traits(getMember, value, member));
         }
 
         ret.object = properties;
+    }
+    else {
+        // I really need to figure out how to generate a compiler error so this fails.
+        pragma(msg, "Type ", T.stringof, " didn't match any of the serialization rules!");
+        assert(0);
     }
     return ret;
 }
@@ -160,7 +176,7 @@ JSONValue serialize (string indent = "", T) (T value) {
  * @param requireAllFields   Consider it an error if some fields aren't present in the JSON object
  * @param T                  The type of object to convert to
  */
-T deserialize(T)(JSONValue json, bool requireAllFields = true) {
+T deserialize(T)(JSONValue json) {
     debug(serialization) pragma(msg, "deserializing type ", T);
 
     // Error string that gets thrown
@@ -237,14 +253,18 @@ T deserialize(T)(JSONValue json, bool requireAllFields = true) {
                 debug(serialization) pragma(msg, " - isAggregateType");
                 T ret;
 
+                // Instantiate a class if it is one.
                 static if (is(T == class)) {
                     ret = new T();
                 }
 
+                // Compile-time iteration over the members of the target type
                 memberLoop: foreach (string member; getProperties!T) {
                     debug(serialization) pragma(msg, "   * ", member);
                     if (member in json) {
 
+                        // Look for @SerializeUsingProperty among the user-defined attributes
+                        // We can't just do hasAttribute!() because we need a reference to the attribute object
                         foreach (attribute; __traits(getAttributes, __traits(getMember, T, member))) {
                             static if (__traits(identifier, attribute) == "SerializeUsingProperty") {
                                 debug(serialization) pragma(msg,
@@ -252,22 +272,42 @@ T deserialize(T)(JSONValue json, bool requireAllFields = true) {
                                     __traits(identifier, TemplateArgsOf!(attribute)[0])
                                 );
 
-                                __traits(getMember, ret, __traits(identifier, TemplateArgsOf!(attribute)[0])) = deserialize!(
-                                    typeof(__traits(getMember, T, __traits(identifier, TemplateArgsOf!(attribute)[0])))
-                                )(json[member], requireAllFields);
+                                alias PropertyType = typeof(__traits(getMember, T, __traits(identifier, TemplateArgsOf!(attribute)[0])));
+
+                                // Assign value to property of object instead of the original variable
+                                __traits(getMember, ret, __traits(identifier, TemplateArgsOf!(attribute)[0])) =
+                                    json[member].deserialize!PropertyType;
 
                                 continue memberLoop;
                             }
                         }
 
-                        __traits(getMember, ret, member) = deserialize!(
-                            typeof(__traits(getMember, ret, member))
-                        )(json[member], requireAllFields);
+                        alias MemberType = typeof(__traits(getMember, ret, member));
+
+                        // Assign value to the member variable
+                        __traits(getMember, ret, member) =
+                            json[member].deserialize!MemberType;
                     }
-                    else if (requireAllFields) {
-                        throw new Exception("Required member \"" ~ member ~ "\" missing in JSON object");
+                    else {
+                        foreach (attribute; __traits(getAttributes, __traits(getMember, T, member))) {
+                            static if (__traits(identifier, attribute) == "Required") {
+                                throw new Exception("Required member \"" ~ member ~ "\" missing in JSON object");
+                            }
+                        }
                     }
                 }
+
+                return ret;
+            }
+            else static if (isAssociativeArray!T && isSomeString!(KeyType!T)) {
+                debug(serialization) pragma(msg, " - isAssociativeArray && isSomeString!KeyType!T");
+
+                T ret;
+
+                foreach(KeyType!T key, value; json) {
+                    ret[key] = value.deserialize!(ValueType!T);
+                }
+
                 return ret;
             }
             else {
@@ -280,7 +320,7 @@ T deserialize(T)(JSONValue json, bool requireAllFields = true) {
                 debug(serialization) pragma(msg, "       -> ", ValueTypeOfStaticArray!(T));
 
                 // Map the fields of the JSONValue array to the target array type.
-                return json.array.map!(a => deserialize!(ValueTypeOfStaticArray!T)(a, requireAllFields)).array.to!T;
+                return json.array.map!(a => deserialize!(ValueTypeOfStaticArray!T)(a)).array.to!T;
 
             }
             else static if (isDynamicArray!T && !isSomeString!T) {
@@ -289,7 +329,7 @@ T deserialize(T)(JSONValue json, bool requireAllFields = true) {
                 debug(serialization) pragma(msg, "       -> ", ValueTypeOfDynamicArray!(T));
 
                 // Map the fields of the JSONValue array to the target array type.
-                return json.array.map!(a => deserialize!(ValueTypeOfDynamicArray!T)(a, requireAllFields)).array.to!T;
+                return json.array.map!(a => deserialize!(ValueTypeOfDynamicArray!T)(a)).array.to!T;
             }
             else {
                 throw new Exception(errorString);
@@ -301,11 +341,10 @@ T deserialize(T)(JSONValue json, bool requireAllFields = true) {
  * Deserialize an object from JSON
  *
  * @param json               The JSON tree to deserialize
- * @param requireAllFields   Consider it an error if some fields aren't present in the JSON object
  * @param T                  The type of object to convert to
  */
-T deserialize(T)(string json, bool requireAllFields = true) {
-    return deserialize!T(parseJSON(json), requireAllFields);
+T deserialize(T)(string json) {
+    return json.parseJSON.deserialize!T;
 }
 
 /// JSON tree serializer. Completely unnecessary, but serves as an example of how to use JSONValue
@@ -380,6 +419,7 @@ version(unittest) {
         int[4]  myStaticArray;
         int[]   myDynamicArray;
         char[]  myDynamicCharArray;
+        int[string] myStringAssociativeArray;
 
         SampleChildBean myChildObject;
         SampleChildBean[] myChildObjectArray;
@@ -391,7 +431,7 @@ version(unittest) {
             return myUnserializableChild.myProperty;
         }
         void myUnserializableChild_accessor (int value) @property {
-            this.myUnserializableChild = new SampleChildBean(); // !! Important for classes !!
+            myUnserializableChild = new SampleChildBean();
             myUnserializableChild.myProperty = value;
         }
 
@@ -461,6 +501,8 @@ unittest {
     original.myDynamicArray     = [5,6,7,8,9];
     original.myDynamicCharArray = "Goodbye Moon".dup;
 
+    original.myStringAssociativeArray = ["apple": 5, "orange": 6, "pear": 4];
+
     original.myChildObject = new SampleChildBean();
     original.myChildObject.myProperty = 7;
 
@@ -469,9 +511,13 @@ unittest {
     original.myChildObjectArray[1].myProperty = 18;
     original.myChildObjectArray[2].myProperty = 19;
 
-    original.myUnserializableChild_accessor = 127;
+    original.myUnserializableChild = new SampleChildBean();
+    original.myUnserializableChild.myProperty = 127;
 
     JSONValue pickled = original.serialize;
+
+    debug (serialization) writeln("Serialized SampleBean:");
+    debug (serialization) writeln(pickled.stringifyJSON);
 
     SampleBean deserialized = pickled.deserialize!SampleBean;
 

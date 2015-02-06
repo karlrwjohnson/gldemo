@@ -6,6 +6,7 @@ import std_all;
 
 import boilerplate;
 import glut;
+import mannequin;
 import mouse;
 import ply;
 import serialization;
@@ -101,12 +102,20 @@ GLfloat lightDist = 5;
 GLfloat lightLat = -45f * PI/180;
 GLfloat lightLon = -45f * PI/180;
 
+GLfloat mannequinMutatorValue = 0;
+
 struct Mesh {
     GLint vaoId;
     GLint dataLength;
+
+    void bind () {
+        glBindVertexArray(vaoId);
+    }
 };
 
 Mesh[string] meshes;
+
+Mannequin[string] mannequins;
 
 /**
  * Whether a given ASCII-mappable key is being pressed.
@@ -126,11 +135,27 @@ Map map;
 
 ///// END GLOBALS /////
 
+void drawMannequin (Mannequin m, mat4 baseTransform = Identity()) {
+    mat4 modelTransform = baseTransform * m.staticTransform * m.animatedTransform;
+    setUniformMatrix(programId, "modelTransform", modelTransform);
+
+    if (!(m.model in meshes)) {
+        meshes[m.model] = loadPlyMesh(programId, "models/" ~ m.model);
+    }
+
+    meshes[m.model].bind();
+    glDrawElements(GL_TRIANGLES, meshes[m.model].dataLength, GL_UNSIGNED_INT, null);
+
+    foreach (child; m.attachments) {
+        drawMannequin(child, modelTransform);
+    }
+}
+
 extern (C)
 void onDisplay() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    vec3 midpoint = vec3(map.width, map.length, 0) / 2f;
+    vec3 midpoint = vec3(map.width - 1, map.length - 1, 0) / 2f;
 
     glBindVertexArray(meshes["floor"].vaoId);
     for (int x = 0; x < map.width; x++) {
@@ -140,15 +165,13 @@ void onDisplay() {
         }
     }
 
-    glBindVertexArray(meshes["pawn"].vaoId);
+    //glBindVertexArray(meshes["pawn"].vaoId);
     foreach (i, coord; map.pawnLocations) {
-        setUniformMatrix(programId, "modelTransform", Translate(vec3(coord[0], coord[1], 0) - midpoint));
-        glDrawArrays(GL_TRIANGLES, 0, meshes["pawn"].dataLength);
-    }
+        //setUniformMatrix(programId, "modelTransform", Translate(vec3(coord[0], coord[1], 0) - midpoint));
+        //glDrawArrays(GL_TRIANGLES, 0, meshes["pawn"].dataLength);
+            drawMannequin(mannequins["person"], Translate(vec3(coord[0],coord[1],0) - midpoint));
 
-    glBindVertexArray(meshes["head"].vaoId);
-    setUniformMatrix(programId, "modelTransform", Identity());
-    glDrawElements(GL_TRIANGLES, meshes["head"].dataLength, GL_UNSIGNED_INT, null);
+    }
 
     glutSwapBuffers();
 
@@ -242,6 +265,23 @@ void onIdle () {
         lightLat = fmax(-PI_2, lightLat - timeElapsed * cameraRadialSpeed);
 		updateLight();
 	}
+    if ('r' in keysDown) {
+        cameraDist /= exp2(timeElapsed);
+        updateCamera();
+    }
+    if ('f' in keysDown) {
+        cameraDist *= exp2(timeElapsed);
+        updateCamera();
+    }
+
+    if ('i' in keysDown) {
+        mannequinMutatorValue += timeElapsed;
+        updateMannequin();
+    }
+    if ('k' in keysDown) {
+        mannequinMutatorValue -= timeElapsed;
+        updateMannequin();
+    }
 
     if (currentMouse.left && (currentMouse.x != prevMouse.x || currentMouse.y != prevMouse.y)) {
         // drag
@@ -258,6 +298,31 @@ void updateCamera() {
 void updateLight() {
 	vec4 lightLoc = RotateZ(lightLon) * RotateX(lightLat) * vec4(0, lightDist, 0, 1);
 	setUniformVector(programId, "lightLoc", lightLoc, true);
+}
+
+void updateMannequin() {
+    auto m = mannequins["person"];
+
+    auto rotXPlus = RotateX(mannequinMutatorValue);
+    auto rotXMinus = RotateX(-mannequinMutatorValue);
+    auto identity = Identity();
+
+    m.attachments["shoulderleft"].animatedTransform = rotXPlus;
+    m.attachments["shoulderright"].animatedTransform = rotXMinus;
+    m.attachments["hipleft"].animatedTransform = rotXMinus;
+    m.attachments["hipright"].animatedTransform = rotXPlus;
+    if (mannequinMutatorValue > 0) {
+        m.attachments["shoulderleft"].attachments["elbow"].animatedTransform = rotXPlus;
+        m.attachments["shoulderright"].attachments["elbow"].animatedTransform = identity;
+        m.attachments["hipleft"].attachments["knee"].animatedTransform = rotXMinus;
+        m.attachments["hipright"].attachments["knee"].animatedTransform = rotXMinus;
+    }
+    else {
+        m.attachments["shoulderleft"].attachments["elbow"].animatedTransform = identity;
+        m.attachments["shoulderright"].attachments["elbow"].animatedTransform = rotXMinus;
+        m.attachments["hipleft"].attachments["knee"].animatedTransform = rotXPlus;
+        m.attachments["hipright"].attachments["knee"].animatedTransform = rotXPlus;
+    }
 }
 
 void setUniformMatrix(size_t A)(GLint progId, string name, mat!A value, bool ignoreUndefinedAttrs = false) {
@@ -528,8 +593,10 @@ void init () {
     meshes["hand"] = loadPlyMesh(programId, "models/hand.ply");
     meshes["head"] = loadPlyMesh(programId, "models/head.ply");
 
+    mannequins["person"] = "data/person_model_nofeet.json".readText.deserialize!Mannequin;
 
-	mat4 perspective = Perspective( 45, 800.0/600.0, .1, 100 ) * RotateX!"deg"(90);
+
+	mat4 perspective = Perspective( 45, 800.0/600.0, .001, 100 ) * RotateX!"deg"(90);
 
 	setUniformMatrix(programId, "perspective", perspective);
 

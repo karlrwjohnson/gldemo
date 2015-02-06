@@ -19,6 +19,14 @@ bool IsTemplateType (alias T : Base!Args, alias Base, Args...) () {
     return true;
 }
 
+bool hasAttribute (alias thing, string attributeName) () {
+    foreach (attribute; __traits(getAttributes, thing)) {
+        static if (__traits(identifier, attribute) == attributeName) {
+            return true;
+        }
+    }
+    return false;
+}
 
 /// Utility method I wrote while writing this. It recursively prints out everything it can to describe a given class.
 static void describeType (T, string name = "", string indent = "") () {

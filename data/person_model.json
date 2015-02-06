@@ -1,127 +1,146 @@
 {	"model": "torso.ply",
-	"attachments": [
-		{	"model": "head.ply",
-			"transformMatrix": [
+	"staticTransform": [
+		0.125,	0,	0,	0,
+		0,	0.125,	0,	0,
+		0,	0,	0.125,	0.6,
+		0,	0,	0,	1
+	],
+	"attachments": {
+		"head": {
+			"model": "head.ply",
+			"staticTransform": [
 				1,	0,	0,	0,
-				0,	1,	0,	0,
-				0,	0,	1,	0,
-				0,	-0.0625, 2.875, 1
+				0,	1,	0,	-0.0625,
+				0,	0,	1,	2.875,
+				0,	0,	0, 1
 			]
 		},
-		{	"model": "upperarm.ply",
-			"transformMatrix": [
-				1,	0,	0,	0,
+		"shoulderleft": {
+			"model": "upperarm.ply",
+			"staticTransform": [
+				1,	0,	0,	1,
 				0,	1,	0,	0,
-				0,	0,	1,	0,
-				1,	0,	2.5,1
+				0,	0,	1,	2.5,
+				0,	0,	0,	1
 			],
-			"attachments": [
-				{	"model": "lowerarm.ply",
-					"transformMatrix": [
-						1,	0,	0,	0,
+			"attachments": {
+				"elbow": {
+					"model": "lowerarm.ply",
+					"staticTransform": [
+						1,	0,	0,	0.25,
 						0,	1,	0,	0,
-						0,	0,	1,	0,
-						0.25,0, -1.5,1
+						0,	0,	1,	-1.5,
+						0,	0,	0,	1
 					],
-					"attachments": [
-						{	"model": "hand.ply",
-							"transformMatrix": [
+					"attachments": {
+						"wrist": {
+							"model": "hand.ply",
+							"staticTransform": [
 								1,	0,	0,	0,
 								0,	1,	0,	0,
-								0,	0,	1,	0,
-								0,	0, -1.5,1
+								0,	0,	1,	-1.5,
+								0,	0,	0,	1
 							]
 						}
-					]
+					}
 				}
-			]
+			}
 		},
-		{	"model": "upperarm.ply",
-			"transformMatrix": [
-				-1,	0,	0,	0,
+		"shoulderright": {
+			"model": "upperarm.ply",
+			"staticTransform": [
+				-1,	0,	0,	-1,
 				0,	1,	0,	0,
-				0,	0,	1,	0,
-				-1,	0,	2.5,1
+				0,	0,	1,	2.5,
+				0,	0,	0,	1
 			],
 			"isMirrored": true,
-			"attachments": [
-				{	"model": "lowerarm.ply",
-					"transformMatrix": [
-						1,	0,	0,	0,
+			"attachments": {
+				"elbow": {
+					"model": "lowerarm.ply",
+					"staticTransform": [
+						1,	0,	0,	0.25,
 						0,	1,	0,	0,
-						0,	0,	1,	0,
-						0.25,0, -1.5,1
+						0,	0,	1,	-1.5,
+						0,	0,	0,	1
 					],
-					"attachments": [
-						{	"model": "hand.ply",
-							"transformMatrix": [
+					"attachments": {
+						"wrist": {
+							"model": "hand.ply",
+							"staticTransform": [
 								1,	0,	0,	0,
 								0,	1,	0,	0,
-								0,	0,	1,	0,
-								0,	0, -1.5,1
+								0,	0,	1,	-1.5,
+								0,	0,	0,	1
 							]
 						}
-					]
+					}
 				}
-			]
+			}
 		},
-		{	"model": "upperleg.ply",
-			"transformMatrix": [
+		"hipleft": {
+			"model": "upperleg.ply",
+			"staticTransform": [
 				1,	0,	0,	0,
 				0,	1,	0,	0,
-				0,	0,	1,	0,
-				0,	0,	0.375,	1
+				0,	0,	1,	0.375,
+				0,	0,	0,	1
 			],
-			"attachments": [
-				{	"model": "lowerleg.ply",
-					"transformMatrix": [
-						1,	0,	0,	0,
+			"attachments": {
+				"knee": {
+					"model": "lowerleg.ply",
+					"staticTransform": [
+						1,	0,	0,	0.375,
 						0,	1,	0,	0,
-						0,	0,	1,	0,
-						0.375, 0, -2.25, 1
+						0,	0,	1,	-2.25,
+						0,	0,	0,	1
 					],
-					"attachments": [
-						{	"model": "foot.ply",
-							"transformMatrix": [
+					"attachments": {
+						"": {
+							"model": "foot.ply",
+							"staticTransform": [
 								1,	0,	0,	0,
 								0,	1,	0,	0,
-								0,	0,	1,	0,
-								0,	0, -2.25, 1
+								0,	0,	1,	-2.25,
+								0,	0,	0,	1
 							]
 						}
-					]
+					}
 				}
-			]
+			}
 		},
-		{	"model": "upperleg.ply",
-			"transformMatrix": [
+		"hipright": {
+			"model": "upperleg.ply",
+			"staticTransform": [
 				-1,	0,	0,	0,
 				0,	1,	0,	0,
-				0,	0,	1,	0,
-				0,	0,	0.375,	1
+				0,	0,	1,	0.375,
+				0,	0,	0,	1
 			],
 			"isMirrored": true,
-			"attachments": [
-				{	"model": "lowerleg.ply",
-					"transformMatrix": [
-						1,	0,	0,	0,
+			"attachments": {
+				"knee": {
+					"model": "lowerleg.ply",
+					"staticTransform": [
+						1,	0,	0,	0.375,
 						0,	1,	0,	0,
-						0,	0,	1,	0,
-						0.375, 0, -2.25, 1
+						0,	0,	1,	-2.25,
+						0,	0,	0,	1
 					],
-					"attachments": [
-						{	"model": "foot.ply",
-							"transformMatrix": [
+					"attachments": {
+						"": {
+							"model": "foot.ply",
+							"staticTransform": [
 								1,	0,	0,	0,
 								0,	1,	0,	0,
-								0,	0,	1,	0,
-								0,	0, -2.25, 1
+								0,	0,	1,	-2.25,
+								0,	0,	0, 1
 							]
 						}
-					]
+					}
 				}
-			]
+			}
 		}
-	]
+	}
 }
 

@@ -7,53 +7,40 @@ import vectypes;
 
 @Bean
 class Mannequin {
+
+    @SerializeRequired
     string model;
 
-    @Bean
-    @SerializeUsingProperty!(this.transformMatrix_accessor)
-    mat4 transformMatrix;
+    @SerializeUsingProperty!(this.staticTransform_accessor)
+    mat4 staticTransform = Identity();
+
+    @SerializeUsingProperty!(this.animatedTransform_accessor)
+    mat4 animatedTransform = Identity();
 
     bool isMirrored;
-    Mannequin[] attachments;
+    Mannequin[string] attachments;
 
-   // package (jsontest)
-    void transformMatrix_accessor (float[16] transformMatrix) @property {
-        this.transformMatrix = mat4(transformMatrix);
+    void staticTransform_accessor (float[16] staticTransform) @property {
+        this.staticTransform = mat4(staticTransform);
     }
-    //package (jsontest)
-    float[16] transformMatrix_accessor () const @property {
-        float[16] ret = this.transformMatrix.data.dup;
+    float[16] staticTransform_accessor () const @property {
+        float[16] ret = this.staticTransform.data.dup;
+        return ret;
+    }
+
+    void animatedTransform_accessor (float[16] animatedTransform) @property {
+        this.animatedTransform = mat4(animatedTransform);
+    }
+    float[16] animatedTransform_accessor () const @property {
+        float[16] ret = this.animatedTransform.data.dup;
         return ret;
     }
 }
 
-/+unittest {
-    import meta;
-    describeType!Mannequin;
-
-    string jsonText = q"(
-        {
-            "model": "MODEL",
-            "isMirrored": true,
-            "attachments" : [],
-            "transformMatrix" : [ 1,2,3,4,
-                                5,6,7,8,
-                                9,10,11,12,
-                                13,14,15,16 ]
-        })";
-
-    auto m = jsonText.deserialize!Mannequin;
-
-    m.serialize.stringifyJSON.writeln;
-
-    assert(m.model == "MODEL");
-    assert(m.transformMatrix == mat4([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]));
-    assert(m.isMirrored == true);
-
-    m.serialize.stringifyJSON.writeln;
-}+/
 
 unittest {
-    //auto person = "data/person_model.json".readText.parseJSON.unpickle!Mannequin(false);
+    auto person = "data/person_model.json".readText.parseJSON.deserialize!Mannequin;
+
+    person.serialize.stringifyJSON.writeln;
 
 }

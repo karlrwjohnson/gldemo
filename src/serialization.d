@@ -20,7 +20,7 @@ struct SerializeRequired { }
 /**
  * Do NOT serialize or deserialize this property
  */
-struct SerializeIgnore { }
+struct NoSerialize { }
 
 /**
  * Whether a member of a type may be serialized.
@@ -54,6 +54,12 @@ struct SerializeIgnore { }
  *                      anyway!
  */
 bool isSerializableProperty (T, string member) () {
+   foreach (attribute; __traits(getAttributes, __traits(getMember, T, member))) {
+        static if (__traits(identifier, attribute) == "NoSerialize") {
+            return false;
+        }
+    }
+
     return !(isAbstractClass!(__traits(getMember, T, member)) ||
              isCallable!(__traits(getMember, T, member)) ||
              is(typeof(__traits(getMember, T, member)) == void)
@@ -162,9 +168,7 @@ JSONValue serialize (T) (T value) {
         ret.object = properties;
     }
     else {
-        // I really need to figure out how to generate a compiler error so this fails.
-        pragma(msg, "Type ", T.stringof, " didn't match any of the serialization rules!");
-        assert(0);
+        static assert(0, "No rule to serialize type \"" ~ T.stringof ~ "\"");
     }
     return ret;
 }
@@ -290,7 +294,7 @@ T deserialize(T)(JSONValue json) {
                     }
                     else {
                         foreach (attribute; __traits(getAttributes, __traits(getMember, T, member))) {
-                            static if (__traits(identifier, attribute) == "Required") {
+                            static if (__traits(identifier, attribute) == "SerializeRequired") {
                                 throw new Exception("Required member \"" ~ member ~ "\" missing in JSON object");
                             }
                         }

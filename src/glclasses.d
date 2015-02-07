@@ -4,16 +4,23 @@ import derelict.opengl3.gl;
 
 import boilerplate : checkGLErrors;
 
+/*
+Buffer Objects
+Query Objects
+Renderbuffer Objects
+Sampler Objects
+Texture Objects
+Framebuffer Objects
+Program Pipeline Objects
+Transform Feedback Objects
+Vertex Array Objects
+*/
+
 class GLObject {
     GLuint handle;
 }
 
-class GLBuffer
-       (glGenBuffers    = glGenBuffers,
-        glDeleteBuffers = glDeleteBuffers,
-        glBindBuffer    = glBindBuffer,
-        checkGLErrors   = checkGLErrors
-       ) : GLObject {
+class GLBuffer : GLObject {
     this () {
         glGenBuffers(1, &this.handle);
         checkGLErrors();
@@ -24,18 +31,13 @@ class GLBuffer
         checkGLErrors();
     }
 
-    override void bind(GLenum target) {
+    void bind(GLenum target) {
         glBindBuffer(target, this.handle);
         checkGLErrors();
     }
 }
-
-class GLProgram
-       (glCreateProgram = glCreateProgram,
-        glDeleteProgram = glDeleteProgram,
-        glUseProgram    = glUseProgram,
-        checkGLErrors   = checkGLErrors
-       ) : GLObject {
+/+
+class GLProgram : GLObject {
     GLShader[GLenum] shaders;
 
     this () {
@@ -53,23 +55,33 @@ class GLProgram
         checkGLErrors();
     }
 
-    void setUniform (size_t Arity) (string name, vec!Arity value, bool assertUniformDefined = false)
-        if (Arity == 1 || Arity == 2 || Arity == 3 || Arity == 4)
-    {
+    private GLint getUniformLocation (string name, bool assertUniformDefined) {
         char[] nameZ = name.dup ~ "\0";
         GLint location = glGetUniformLocation(progId, &nameZ[0]);
         checkGLErrors();
-        if (location < 0) {
-            if (assertUniformDefined) {
-                throw new Exception(format(
-                    "Uniform variable %s has not been assigned an ID; it " ~
-                    "probably doesn't exist in the program.", name));
-            }
-            else {
-                return;
-            }
+        if (location < 0 && assertUniformDefined) {
+            throw new Exception(format(
+                "Uniform variable %s has not been assigned an ID; it " ~
+                "probably doesn't exist in the program.", name));
         }
-        mixin(format("glUniform%dfv(location, 1, value.ptr);", Arity));
+        else {
+            return location;
+        }
+    }
+
+    void setUniform (size_t Arity) (string name, vec!Arity value, bool assertUniformDefined = false)
+        if (Arity == 2 || Arity == 3 || Arity == 4)
+    {
+        mixin("auto glUniform = glUniform" ~ Arity ~ "fv");
+        glUniform(getUniformLocation(name), 1, value.ptr);
+        checkGLErrors();
+    }
+
+    void setUniform (size_t Arity) (string name, mat!Arity value, bool assertUniformDefined = false)
+        if (Arity == 2 || Arity == 3 || Arity == 4)
+    {
+        mixin("auto glUniformMatrix = glUniformMatrix" ~ Arity ~ "fv");
+        glUniformMatrix(getUniformLocation(name), 1, value.ptr);
         checkGLErrors();
     }
 
@@ -84,18 +96,7 @@ class GLProgram
     }
 }
 
-unittest {
-    alias GLProg = GLProgram!(
-}
-
-class GLShader
-       (glCreateShader  = glCreateShader,
-        glDeleteShader  = glDeleteShader,
-        glShaderSource  = glShaderSource,
-        glCompileShader = glCompileShader,
-        glShaderiv      = glShaderiv,
-        checkGLErrors   = checkGLErrors
-       ) : GLObject {
+class GLShader : GLObject {
     GLenum type;
 
     static enum GL_SHADER_TYPE {
@@ -151,6 +152,6 @@ class GLShader
             throw new Exception("Error while compiling shader: " ~ msgBuffer.idup);
         }
     }
-}
+}+/
 
 //void draw (GLProgram shader)

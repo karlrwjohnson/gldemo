@@ -9,3 +9,6 @@
 
 # Ignore object files
 *.o
+
+# Ignore bin output directory
+bin/

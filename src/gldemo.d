@@ -593,7 +593,7 @@ void init () {
     meshes["hand"] = loadPlyMesh(programId, "models/hand.ply");
     meshes["head"] = loadPlyMesh(programId, "models/head.ply");
 
-    mannequins["person"] = "data/person_model_nofeet.json".readText.deserialize!Mannequin;
+    mannequins["person"] = "data/person_model.json".readText.deserialize!Mannequin;
 
 
 	mat4 perspective = Perspective( 45, 800.0/600.0, .001, 100 ) * RotateX!"deg"(90);

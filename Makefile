@@ -1,9 +1,12 @@
 
+DC=dmd
+#DC=gdc
+#DC=ldc2
+
+# External library dependencies
 LIBS = GL glut dl
 
-#D_COMPILER_FLAGS = -g -gs -gc
-D_COMPILER_FLAGS = -g
-D_LINKER_FLAGS=$(shell bash -c 'for i in ${LIBS}; do echo -L-l$${i}; done')
+LIB_FLAGS = $(shell bash -c 'for i in ${LIBS}; do echo -L-l$${i}; done')
 
 D_UNITTEST_FLAGS = -unittest
 
@@ -12,27 +15,44 @@ PROJECT_SOURCES = $(shell find src/ -name \*.d)
 
 D_SOURCES = ${PROJECT_SOURCES}
 
-#DC=dmd
-#DC = gdc
-DC=/opt/ldc/bin/ldc2
+OUTPUT_DIR = bin
 
-# -of for dmd, -o for gdc
-OUTPUT_FLAG = "-of"
-#OUTPUT_FLAG = "-o"
+ifeq (${DC}, dmd)
+	D_COMPILER_FLAGS = -g -gs -gc
+	OUTPUT_FLAG = -od${OUTPUT_DIR} "-of"
+endif
+ifeq (${DC}, gdc)
+	D_COMPILER_FLAGS = -g
+	OUTPUT_FLAG = -od${OUTPUT_DIR} "-o"
+endif
+ifeq (${DC}, ldc2)
+	D_COMPILER_FLAGS = -g -singleobj
+	OUTPUT_FLAG = -od${OUTPUT_DIR} "-of"
+endif
 
-# gldemo: ${D_SOURCES} derelict.o
-gldemo: ${D_SOURCES} ${DERELICT_SOURCES}
-	${DC} $^ ${D_COMPILER_FLAGS} ${D_LINKER_FLAGS} ${OUTPUT_FLAG}$@
+${OUTPUT_DIR}/gldemo: ${D_SOURCES} ${OUTPUT_DIR}/derelict.o
+	mkdir -p ${OUTPUT_DIR}
+	${DC} $^ ${D_COMPILER_FLAGS} ${LIB_FLAGS} ${OUTPUT_FLAG}$@
 
-# derelict.o: ${DERELICT_SOURCES}
-# 	#${DC} $^ -c -oq -of$@
-# 	${DC} $^ -c -oq -of$@
+${OUTPUT_DIR}/unittests: ${D_SOURCES} ${OUTPUT_DIR}/derelict.o
+	mkdir -p ${OUTPUT_DIR}
+	${DC} $^ ${D_UNITTEST_FLAGS} ${D_COMPILER_FLAGS} ${LIB_FLAGS} ${OUTPUT_FLAG}$@
 
-unittests: ${D_SOURCES} derelict.o
-	${DC} $^ ${D_UNITTEST_FLAGS} ${D_COMPILER_FLAGS} ${D_LINKER_FLAGS} ${OUTPUT_FLAG}$@
+${OUTPUT_DIR}/derelict.o: ${DERELICT_SOURCES}
+	mkdir -p ${OUTPUT_DIR}
+	${DC} $^ ${D_COMPILER_FLAGS} -c ${OUTPUT_FLAG}$@
 
-run: gldemo
-	./gldemo
+run: ${OUTPUT_DIR}/gldemo
+	${OUTPUT_DIR}/gldemo
+
+rununittests: ${OUTPUT_DIR}/unittests
+	${OUTPUT_DIR}/unittests
+
+valgrind: ${OUTPUT_DIR}/gldemo
+	valgrind ${OUTPUT_DIR}/gldemo
+
+valgrindunittests: ${OUTPUT_DIR}/unittests
+	valgrind ${OUTPUT_DIR}/unittests
 
 clean:
-	rm gldemo
+	rm -r bin
